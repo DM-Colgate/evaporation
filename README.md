@@ -37,3 +37,6 @@ optional arguments:
   -n, --np        plot proton number denisty from MESA data file
 ```
 These can be printed with `./evap_snapshot.py -h`.
+
+### Issues
+ - [ ] Issues with the calculated potential from MESA's gravitational acceleration?
