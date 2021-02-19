@@ -8,6 +8,7 @@
 ####################
 import mesa_reader as mr
 import sys
+import argparse
 import numpy as np
 import mpmath as mp
 import math
@@ -256,10 +257,46 @@ def evap_coeff(mx, sigma, star, vcut_inf = False):
     return E
 
 
+#Retrieves tau(mx) from stored data
+def retrieve_tau(star_mass):
+    mx = []
+    tau = []
+    with open('tau_mx_M%i.csv'%star_mass) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            mx.append(float(row[0]))
+            tau.append(float(row[1]))
+    return (mx, tau)
+
+def tau_fit(mx, star_mass): #Returns tau from fitting function based on star and dm mass
+    if(mx > 100):
+        tau_val = 1
+    else:
+        if(star_mass == 100):
+            tau_val = tau_fit_funcs[0](mx)
+        elif(star_mass == 300):
+            tau_val = tau_fit_funcs[1](mx)
+        elif(star_mass == 1000):
+            tau_val = tau_fit_funcs[2](mx)
+        else:
+            tau_val = 1
+    return tau_val
+
 ########
 # MAIN #
 ########
 def main():
+    # parse commandline arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-D", "--direc", help="directory containing MESA profile and history files")
+    parser.add_argument("-p", "--profile", help="index of the profile to use", type=int)
+    parser.add_argument("-T", "--TchiMchi", help="plot DM temperature vs DM mass", action='store_true')
+    parser.add_argument("-t", "--taumu", help="plot DM dimensionless temperature vs DM dimensionless mass", action='store_true')
+    parser.add_argument("-V", "--phi", help="plot radial graviation potential from MESA data files", action='store_true')
+    parser.add_argument("-n", "--np", help="plot proton number denisty from MESA data files", action='store_true')
+
+    args = parser.parse_args()
+
     # set variables
     global mchi
     mchi = 1.6726231 * 10 ** (-24) # grams
@@ -271,11 +308,13 @@ def main():
     g_per_GeV = 5.61 *10 ** (-23)
 
     # read in MESA data from files specified in command line arguments
-    arg1 = str(sys.argv[1])
+    # arg1 = str(sys.argv[1])
+    arg1 = args.direc
     arg = arg1.split('_')
     hist= "history_" + arg[0] + ".data"
     direc = mr.MesaLogDir(log_path=arg1, history_file=hist)
-    prof = direc.profile_data(int(sys.argv[2]))
+    # prof = direc.profile_data(int(sys.argv[2]))
+    prof = direc.profile_data(int(args.profile))
 
     # calculate the gravitational potential
     global phi_mesa
@@ -312,28 +351,46 @@ def main():
         mu_sample.append(g_per_GeV * mchi_sample[i] / m_p)
         Tau_sample.append(Tchi_sample[i] / T_mesa[-1])
 
-    # plot
-    plt.plot(mchi_sample, Tchi_sample, ls = '-', linewidth = 1, label="$100 M_{\odot}$")
-    plt.title("MESA DM Temperature $100 M_{\odot}$ (Windhorst)")
-    plt.legend()
-    plt.xlabel('$M_{\chi}$ [Gev]')
-    plt.ylabel('$T_{\chi}$ [K]')
-    plt.yscale("log")
-    plt.xscale("log")
-    plt.show()
-    plt.clf()
+    tau_fit_funcs = []
+    mx_tau_fit, tau_temp = retrieve_tau(100)
+    tau_fit_funcs.append(UnivariateSpline(mx_tau_fit, tau_temp, k = 5, s = 0))
+
 
     # plot
-    plt.plot(mu_sample, Tau_sample, ls = '-', linewidth = 1, label="$100 M_{\odot}$")
-    plt.title("MESA DM Temperature $100 M_{\odot}$ (Windhorst)")
-    plt.legend()
-    plt.xlabel('$ \mu $')
-    plt.ylabel('$ \tau $')
-    plt.yscale("log")
-    plt.xscale("log")
-    plt.show()
-    plt.clf()
+    if args.TchiMchi == True:
+        plt.plot(mchi_sample, Tchi_sample, ls = '-', linewidth = 1, label="$100 M_{\odot}$")
+        plt.title("MESA DM Temperature $100 M_{\odot}$ (Windhorst)")
+        plt.legend()
+        plt.xlabel('$M_{\chi}$ [Gev]')
+        plt.ylabel('$T_{\chi}$ [K]')
+        plt.yscale("log")
+        plt.xscale("log")
+        plt.show()
+        plt.clf()
 
+    # plot
+    if args.taumu == True:
+        plt.plot(mu_sample, Tau_sample, ls = '-', linewidth = 1, label="$100 M_{\odot}$")
+        # plt.plot(mx_tau_fit, tau_temp, ls = '-', linewidth = 1, label="Poly $100 M_{\odot}$")
+        plt.title("MESA DM Temperature $100 M_{\odot}$ (Windhorst)")
+        plt.legend()
+        plt.xlabel('$ \mu $')
+        plt.ylabel('$ \tau $')
+        plt.yscale("log")
+        plt.xscale("log")
+        plt.show()
+        plt.clf()
+
+    if args.phi == True:
+        plt.plot(phi_mesa, r_mesa, ls = '-', linewidth = 1, label="$100 M_{\odot}$")
+        plt.title("MESA Grav. Pot. $100 M_{\odot}$ (Windhorst)")
+        plt.legend()
+        plt.xlabel('$ \mu $')
+        plt.ylabel('$ \tau $')
+        plt.yscale("log")
+        plt.xscale("log")
+        plt.show()
+        plt.clf()
 
 ###########
 # EXECUTE #
