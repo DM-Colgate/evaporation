@@ -40,5 +40,14 @@ optional arguments:
 ```
 These can be printed with `./evap_snapshot.py -h`.
 
-### Issues
+
+# Note on Branches:
+Please feel free to make any commits you want to the 'testing' branch. To switch branches simply use the 'checkout' command:
+
+`git checkout testing` or `git checkout master`
+
+Just make sure to comment your code and add an explanitory commit message.  
+
+
+# Issues
  - [ ] Issues with the calculated potential from MESA's gravitational acceleration?
