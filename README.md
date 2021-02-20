@@ -1,6 +1,6 @@
 # Documentation
 ### Dependencies:
- - [py_mesa_reader](https://github.com/wmwolf/py_mesa_readerhttps://github.com/wmwolf/py_mesa_reader)
+ - [py_mesa_reader](https://github.com/wmwolf/py_mesa_reader)
  - scipy
  - matplotlib
 
