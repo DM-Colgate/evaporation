@@ -382,13 +382,13 @@ def main():
         plt.clf()
 
     if args.phi == True:
-        plt.plot(phi_mesa, r_mesa, ls = '-', linewidth = 1, label="$100 M_{\odot}$")
+        plt.plot(r_mesa, phi_mesa, ls = '-', linewidth = 1, label="$100 M_{\odot}$")
         plt.title("MESA Grav. Pot. $100 M_{\odot}$ (Windhorst)")
         plt.legend()
-        plt.xlabel('$ \mu $')
-        plt.ylabel('$ \tau $')
-        plt.yscale("log")
-        plt.xscale("log")
+        plt.xlabel('$ r [R_{\odot}] $')
+        plt.ylabel('$ \phi [] $')
+        # plt.yscale("log")
+        # plt.xscale("log")
         plt.show()
         plt.clf()
 

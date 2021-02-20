@@ -16,9 +16,11 @@ Execute from the command line, in the directory that contains MESA log directori
     └── profile31.index
 ```
 
-Specify the directory as the first argument, then the indecies of profile files you wish to plot as the 2nd thru Nth arguments:
+Specify the directory using the `-D` flag, then the index of profile file you wish to plot with the `-p` flag:
 
-```./evap_snapshot.py mesa_1 400 555 500```.
+```./evap_snapshot.py -D mesa_1 -p 700```.
+
+Finally, pass the `-T`, `-t`, `-V`, or `-n` flags to specify which plot (or plots) to show.
 
 These indices can be found inside the `profiles.index` file.
 
