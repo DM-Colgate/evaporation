@@ -41,7 +41,7 @@ optional arguments:
 These can be printed with `./evap_snapshot.py -h`.
 
 
-# Note on Branches:
+# Note on Branches
 Please feel free to make any commits you want to the 'testing' branch. To switch branches simply use the 'checkout' command:
 
 `git checkout testing` or `git checkout master`
