@@ -26,17 +26,19 @@ These indices can be found inside the `profiles.index` file.
 
 The current command line arguments are:
 ```
-usage: evap_snapshot.py [-h] [-T] [-t] [-V] [-n]
+usage: evap_snapshot.py [-h] [-D DIREC] [-p PROFILE] [-T] [-t] [-V] [-v] [-n]
 
 optional arguments:
-  -h, --help      show this help message and exit
+  -h, --help            show this help message and exit
   -D DIREC, --direc DIREC
                         directory containing MESA profile and history files
   -p PROFILE, --profile PROFILE
-  -T, --TchiMchi  plot DM temperature vs DM mass
-  -t, --taumu     plot DM dimensionless temperature vs DM dimensionless mass
-  -V, --phi       plot radial graviation potential from MESA data files
-  -n, --np        plot proton number denisty from MESA data file
+                        index of the profile to use
+  -T, --TchiMchi        plot DM temperature vs DM mass
+  -t, --taumu           plot DM dimensionless temperature vs DM dimensionless mass
+  -V, --phi             plot radial graviation potential from MESA data files
+  -v, --phipoly         plot radial graviation potential for N=3 polytrope
+  -n, --np              plot proton number denisty from MESA data files
 ```
 These can be printed with `./evap_snapshot.py -h`.
 
