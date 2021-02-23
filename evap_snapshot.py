@@ -341,6 +341,12 @@ def evap_coeff(mx, sigma, star, vcut_inf = False):
     return E
 
 
+def mesa_evap_coeff(mx, sigma, prof, vcut_inf = False):
+    xi1 = xis[-1]
+    E = quad(upper_integrand, 0, xi1, args=(mx, sigma, star, vcut_inf))[0]/quad(lower_integrand, 0, xi1, args=(mx, sigma, star))[0]
+    return E
+
+
 def retrieve_tau(star_mass):
     '''Retrieves tau(mx) from stored data'''
     mx = []
@@ -393,6 +399,7 @@ def main():
     parser.add_argument("-V", "--phi", help="plot radial graviation potential from MESA data files", action='store_true')
     parser.add_argument("-v", "--phipoly", help="plot radial graviation potential for N=3 polytrope", action='store_true')
     parser.add_argument("-n", "--np", help="plot proton number denisty from MESA data files", action='store_true')
+    parser.add_argument("-e", "--evap", help="plot DM evap rate from MESA data files", action='store_true')
 
     args = parser.parse_args()
 
@@ -478,12 +485,37 @@ def main():
     phi_xi_poly = potential_poly(xis, poly100)
     xis_frac = np.true_divide(xis, xis[-1])
 
+    #Taking typical sigma value
+    sigma = 1e-43
+
+    #DM Mass
+    mx = np.logspace(-4, 0, 30)
+
+    # numerical vs Approximate solution
+    E_G = []
+    E_ilie = []
+    E_ilie2 = []
+    E_G.append([])
+    E_ilie.append([])
+    E_ilie2.append([])
+
+    # loop over DM masses for poly and approx
+    for i in range(0, len(mx)):
+        E_G.append(evap_coeff_G(mx[i], sigma, star))
+        E_ilie.append(evap_coeff_Ilie_approx(mx[i], sigma, star))
+        E_ilie2.append(evap_coeff_Ilie_approx2(mx[i], sigma, star))
+
+    # plot formatting
+    fig = plt.figure(figsize = (12,8))
+    plt.style.use('fast')
+    palette = plt.get_cmap('viridis')
+
     # plot Tchi vs. Mchi
     if args.TchiMchi == True:
         plt.plot(mchi_sample, Tchi_sample, ls = '-', linewidth = 1, label=mesa_lab)
         plt.title("MESA DM Temperature $100 M_{\\odot}$ (Windhorst)")
         plt.legend()
-        plt.xlabel('$M_{\\chi}$ [Gev]')
+        plt.xlabel('$m_{\\chi}$ [Gev]')
         plt.ylabel('$T_{\\chi}$ [K]')
         # plt.yscale("log")
         plt.xscale("log")
@@ -517,6 +549,23 @@ def main():
         # plt.xscale("log")
         plt.show()
         plt.clf()
+
+
+    # evap vs mchi
+    if args.evap == True:
+        plt.plot(mx, E_G, label = 'Numerical, $M_\star = %i$'%star.mass, ls = '-')
+        plt.plot(mx, E_ilie2, label = 'Approximate Solution (New)', ls = '--')
+        plt.plot(mx, E_ilie, label = 'Approximate Solution (Old)', ls = '-.')
+        plt.plot(mx, E_mesa, label = mesa_lab, ls = '-.')
+        plt.xscale('log')
+        plt.yscale('log')
+        plt.xlabel('$m_X$ [GeV]', fontsize = 15)
+        plt.ylabel('$E$ [s$^{-1}$]', fontsize = 15)
+        plt.xlim(mx[0], mx[-1])
+        plt.title('DM Evaporation Rate in Population III Stars, $\\sigma = 10^{%i}$'%np.log10(sigma), fontsize = 15)
+        plt.legend(loc = 'best')
+        plt.savefig('Evap_mx_NumvsApprox.pdf', dpi = 200, bbox_inches = 'tight', pad_inches = 0)
+        plt.show()
 
 ###########
 # EXECUTE #
