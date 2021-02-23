@@ -50,4 +50,8 @@ Just make sure to comment your code and add an explanitory commit message.
 
 
 # Issues
- - [ ] Issues with the calculated potential from MESA's gravitational acceleration?
+ - [X] Issues with the calculated potential from MESA's gravitational acceleration?
+ - [ ] Implement MESA Evap. rates.
+ - [ ] Implement N=3 polytrope Evap. rates.
+ - [ ] Implement closed form Evap. approx.
+ - [ ] Simultaneously plot multiple models and/or multiple stars.
