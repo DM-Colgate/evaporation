@@ -28,6 +28,59 @@ from IPython.display import clear_output
 import csv
 import copy
 
+
+##################
+# DEFINE CLASSES #
+##################
+class PopIIIStar:
+    '''
+    describes important parameters of a population III star,
+        units:
+        M - Solar
+        R - Solar
+        L - Solar
+        Tc - Kelvin (K)
+        rhoc - g/cm^3
+        life_star - years
+    '''
+
+    def __init__(self, M = 0, R = 0, L = 0, Tc = 0, rhoc = 0, life_star = 0):
+        self.mass = M
+        self.radius = R
+        self.lum = L
+        self.core_temp = Tc
+        self.core_density = rhoc
+        self.lifetime = life_star
+
+
+    def get_vol(self):
+        ''' calculates stellar volume '''
+        vol = (4/3) * np.pi * (self.radius*6.96e10)**3 #in cm^3
+        return vol
+
+
+    def get_num_density(self):
+        mn_grams = 1.6726e-24
+        M = 1.9885e33 * self.mass
+        n_baryon = 0.75*M/mn_grams * 1/(self.get_vol())
+        return n_baryon
+
+
+    def get_mass_grams(self):
+        M_gram = 1.9885e33 * self.mass
+        return M_gram
+
+    def get_radius_cm(self):
+        R_cm = self.radius*6.96e10
+        return R_cm
+
+    def get_vesc_surf(self):
+        G  = 6.6743*10**(-8) #cgs units
+        M = self.get_mass_grams()
+        R = self.get_radius_cm()
+        Vesc = np.sqrt(2*G*M/R) # escape velocity(cm/s) 
+        return Vesc
+
 ####################
 # DEFINE FUNCTIONS #
 ####################
@@ -56,7 +109,7 @@ def calc_phi_mesa(prof):
         # create an array of raddii and phis only interior of our point i
         # in MESA 1st cell is the surface, last cell is the center
         # \/ lists that exclude cells exterior to i \/
-        r = prof.radius[k:]
+        r = prof.radius_cm[k:]
         acc = prof.grav[k:]
         # integate over the grav. acc. w.r.t. radius up to the point i
         phi.append(np.trapz(-1*acc, x=r))
@@ -72,10 +125,41 @@ def calc_np_mesa(prof):
     return np_mesa
 
 
+def calc_r_mesa_frac(prof):
+    ''' calculate dimesnionless radius'''
+    r_mesa_frac = []
+    for k in range(len(prof.radius)):
+        r_mesa_frac.append(prof.radius[k] / prof.radius[0])
+    return r_mesa_frac
+
+
 def calc_Tchi(func, Tchi_guess):
     ''' returns for what Tchi the input function is zero'''
     return fsolve(func, Tchi_guess)
 
+
+def polytrope3_rhoc(star):
+    '''density at center of polytrope'''
+    # getting stellar params
+    Mstar = star.get_mass_grams() #grams
+    Rstar = star.get_radius_cm()  #cm
+
+    # x-intercept of the theta function
+    xi_1 = xis[-1]
+
+    # slope of laneEmden at Theta = 0
+    deriv_xi1 = theta.derivatives(xis[-1])[1]
+
+    # central polytropic density as per n=3 polytropic model
+    rhoc_poly = (-1/(4*np.pi)) * ((xi_1/Rstar)**3) * (Mstar/(xi_1**2)) * (deriv_xi1)**-1 #g/cm^3
+    return rhoc_poly
+
+
+def potential_poly(xi, star):
+    '''Polytropic potential'''
+    G = 6.6743*10**(-8) # gravitational constant in cgs units
+    phi_xi = 4*np.pi*G*(polytrope3_rhoc(star)) * (star.get_radius_cm()/xis[-1])**2 * (1 - theta(xi)) #cgs units
+    return phi_xi
 
 # misc evap functions (for polytropes)
 def vesc_r_poly(xi, star):
@@ -86,7 +170,6 @@ def vesc_r_poly(xi, star):
     return vesc_xi/star.get_vesc_surf()
 
 
-# mu functions
 def mu(mx):
     ''' takes m_chi in GeV '''
     mu_val = mx/0.93827
@@ -99,6 +182,7 @@ def mu_plus_minus(plus_minus, mx):
     elif(plus_minus == '-'):
         mu_plus_val = (mu(mx) - 1)/2
     return mu_plus_val
+
 
 def proton_speed(xi, star):
     ''' l(r), most probable dimensionless velocity of protons at specific point in star '''
@@ -199,8 +283,8 @@ def omega(z, mx, xi, sigma, star):
     return omega_val
 
 
-# average dm speed in star (isotropic)
 def dm_speed(mx, star):
+    '''average dm speed in star (isotropic)'''
     kb = 1.380649e-16 #Boltzmann constant in cgs Units (erg/K)
     Tx = (mx, star) * 10**8 #DM temperature
     mx_g = mx * 1.783e-24 #Converting GeV/c^2 to g
@@ -257,8 +341,8 @@ def evap_coeff(mx, sigma, star, vcut_inf = False):
     return E
 
 
-#Retrieves tau(mx) from stored data
 def retrieve_tau(star_mass):
+    '''Retrieves tau(mx) from stored data'''
     mx = []
     tau = []
     with open('tau_mx_M%i.csv'%star_mass) as csv_file:
@@ -267,6 +351,19 @@ def retrieve_tau(star_mass):
             mx.append(float(row[0]))
             tau.append(float(row[1]))
     return (mx, tau)
+
+
+def retrieve_LaneEmden():
+    '''Retrieves solution to laneEmden n=3'''
+    xis = []
+    theta_arr = []
+    with open('Lane_Emden.csv') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            xis.append(float(row[0]))
+            theta_arr.append(float(row[1]))
+    return (xis, theta_arr)
+
 
 def tau_fit(mx, star_mass): #Returns tau from fitting function based on star and dm mass
     if(mx > 100):
@@ -282,6 +379,7 @@ def tau_fit(mx, star_mass): #Returns tau from fitting function based on star and
             tau_val = 1
     return tau_val
 
+
 ########
 # MAIN #
 ########
@@ -293,6 +391,7 @@ def main():
     parser.add_argument("-T", "--TchiMchi", help="plot DM temperature vs DM mass", action='store_true')
     parser.add_argument("-t", "--taumu", help="plot DM dimensionless temperature vs DM dimensionless mass", action='store_true')
     parser.add_argument("-V", "--phi", help="plot radial graviation potential from MESA data files", action='store_true')
+    parser.add_argument("-v", "--phipoly", help="plot radial graviation potential for N=3 polytrope", action='store_true')
     parser.add_argument("-n", "--np", help="plot proton number denisty from MESA data files", action='store_true')
 
     args = parser.parse_args()
@@ -308,85 +407,112 @@ def main():
     g_per_GeV = 5.61 *10 ** (-23)
 
     # read in MESA data from files specified in command line arguments
-    # arg1 = str(sys.argv[1])
-    arg1 = args.direc
-    arg = arg1.split('_')
-    hist= "history_" + arg[0] + ".data"
-    direc = mr.MesaLogDir(log_path=arg1, history_file=hist)
-    # prof = direc.profile_data(int(sys.argv[2]))
-    prof = direc.profile_data(int(args.profile))
+    if args.direc and args.profile:
+        arg1 = args.direc
+        arg = arg1.split('_')
+        hist= "history_" + arg[0] + ".data"
+        direc = mr.MesaLogDir(log_path=arg1, history_file=hist)
+        prof = direc.profile_data(int(args.profile))
 
-    # calculate the gravitational potential
-    global phi_mesa
-    phi_mesa = calc_phi_mesa(prof)
+        # calculate the gravitational potential
+        global phi_mesa
+        phi_mesa = calc_phi_mesa(prof)
 
-    # calculate the proton number density
-    global np_mesa
-    np_mesa = calc_np_mesa(prof)
+        # calculate the proton number density
+        global np_mesa
+        np_mesa = calc_np_mesa(prof)
 
-    # set temp and radius
-    global T_mesa
-    global r_mesa
-    T_mesa = prof.temperature
-    r_mesa = prof.radius
+        # set temp and radius
+        global T_mesa
+        global r_mesa
+        global r_mesa_cgs
+        global r_mesa_frac
+        T_mesa = prof.temperature
+        r_mesa = prof.radius
+        r_mesa_cgs = prof.radius_cm
+        r_mesa_frac = calc_r_mesa_frac(prof)
 
-    # use central temp to guess
-    Tchi_guess = T_mesa[-1]
+        # read info about the MESA star
+        mass = str(round(prof.star_mass, 3))
+        year = str(round(prof.star_age, 3))
+        model = str(round(prof.model_number, 3))
+        mesa_lab = year + " yr, " + mass + " $M_{\\odot}$, " + model
 
-    # masses to test
-    mchi_sample = [0.0001, 0.0002, 0.0003, 0.0005, 0.0007, 0.001, 0.002, 0.003, 0.005, 0.007, 0.01, 0.02, 0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.5, 0.7, 1, 2, 3, 5, 7, 10, 20, 30, 50, 70, 100, 200, 300, 500, 700, 1000, 2000, 3000, 5000, 7000, 10000]
-    Tchi_sample = []
+        # use central temp to guess
+        Tchi_guess = T_mesa[-1]
 
-    # run thru all massses
-    for i in range(len(mchi_sample)):
-        mchi = g_per_GeV * mchi_sample[i]
-        print("Solving Tchi for Mchi = ", mchi_sample[i], "...")
-        # numerically solve
-        Tchi_sample.append(calc_Tchi(SP85_EQ410, Tchi_guess))
+        # masses to test
+        mchi_sample = [0.00001, 0.000015, 0.00002, 0.00003, 0.00005, 0.00007, 0.0001, 0.00015, 0.0002, 0.0003, 0.0005, 0.0007, 0.001, 0.0015, 0.002, 0.003, 0.005, 0.007, 0.01, 0.015, 0.02, 0.03, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3, 0.5, 0.7, 1, 1.5, 2, 3, 5, 7, 10, 15, 20, 30, 50, 70, 100, 150, 200, 300, 500, 700, 1000, 1500, 2000, 3000, 5000, 7000, 10000, 15000]
+        Tchi_sample = []
 
-    # convert to dimensionless
-    mu_sample = []
-    Tau_sample = []
-    for i in range(len(mchi_sample)):
-        mu_sample.append(g_per_GeV * mchi_sample[i] / m_p)
-        Tau_sample.append(Tchi_sample[i] / T_mesa[-1])
+        # do MESA calcs and run thru all massses
+        for i in range(len(mchi_sample)):
+            mchi = g_per_GeV * mchi_sample[i]
+            print("Solving Tchi for Mchi =", mchi_sample[i], "Gev...")
+            # numerically solve
+            Tchi_sample.append(calc_Tchi(SP85_EQ410, Tchi_guess))
+
+        # convert to dimensionless
+        mu_sample = []
+        Tau_sample = []
+        for i in range(len(mchi_sample)):
+            mu_sample.append(g_per_GeV * mchi_sample[i] / m_p)
+            Tau_sample.append(Tchi_sample[i] / T_mesa[-1])
+
+    # define some pop III polytopic stars
+    poly100 = PopIIIStar(100, 10**0.6147, 10**6.1470, 1.176e8, 32.3, 10**6)
+    poly300 = PopIIIStar(300, 10**0.8697, 10**6.8172, 1.245e8, 18.8, 10**6)
+    poly1000 = PopIIIStar(1000, 10**1.1090, 10**7.3047, 1.307e8, 10.49, 10**6)
+    stars_list = (poly100, poly300, poly1000)
 
     tau_fit_funcs = []
     mx_tau_fit, tau_temp = retrieve_tau(100)
     tau_fit_funcs.append(UnivariateSpline(mx_tau_fit, tau_temp, k = 5, s = 0))
 
+    # polytrope conversion
+    global xis
+    global xis_frac
+    global theta
+    xis, theta_arr = retrieve_LaneEmden()
+    theta = UnivariateSpline(xis, theta_arr, k = 5, s = 0)
+    phi_xi_poly = potential_poly(xis, poly100)
+    xis_frac = np.true_divide(xis, xis[-1])
 
-    # plot
+    # plot Tchi vs. Mchi
     if args.TchiMchi == True:
-        plt.plot(mchi_sample, Tchi_sample, ls = '-', linewidth = 1, label="$100 M_{\odot}$")
-        plt.title("MESA DM Temperature $100 M_{\odot}$ (Windhorst)")
+        plt.plot(mchi_sample, Tchi_sample, ls = '-', linewidth = 1, label=mesa_lab)
+        plt.title("MESA DM Temperature $100 M_{\\odot}$ (Windhorst)")
         plt.legend()
-        plt.xlabel('$M_{\chi}$ [Gev]')
-        plt.ylabel('$T_{\chi}$ [K]')
-        plt.yscale("log")
+        plt.xlabel('$M_{\\chi}$ [Gev]')
+        plt.ylabel('$T_{\\chi}$ [K]')
+        # plt.yscale("log")
         plt.xscale("log")
         plt.show()
         plt.clf()
 
-    # plot
+    # plot tau vs. mu
     if args.taumu == True:
-        plt.plot(mu_sample, Tau_sample, ls = '-', linewidth = 1, label="$100 M_{\odot}$")
-        # plt.plot(mx_tau_fit, tau_temp, ls = '-', linewidth = 1, label="Poly $100 M_{\odot}$")
-        plt.title("MESA DM Temperature $100 M_{\odot}$ (Windhorst)")
+        plt.plot(mu_sample, Tau_sample, ls = '-', linewidth = 1, label=mesa_lab)
+        plt.plot(mx_tau_fit, tau_temp, ls = '-', linewidth = 1, label="$100 M_{\odot}$ N=3")
+        plt.title("MESA DM Temperature $100 M_{\\odot}$ (Windhorst)")
         plt.legend()
-        plt.xlabel('$ \mu $')
-        plt.ylabel('$ \tau $')
-        plt.yscale("log")
+        plt.xlabel('$ \\mu $')
+        plt.ylabel('$ \\tau $')
+        # plt.yscale("log")
         plt.xscale("log")
         plt.show()
         plt.clf()
 
-    if args.phi == True:
-        plt.plot(r_mesa, phi_mesa, ls = '-', linewidth = 1, label="$100 M_{\odot}$")
-        plt.title("MESA Grav. Pot. $100 M_{\odot}$ (Windhorst)")
+    # plot phi vs. r
+    if args.phipoly == True or args.phi == True:
+        if args.phi == True:
+            plt.plot(r_mesa_frac, phi_mesa, ls = '-', linewidth = 1, label=mesa_lab)
+        if args.phipoly == True:
+            plt.plot(xis_frac, phi_xi_poly, ls = '-', linewidth = 1, label="$100 M_{\\odot}$ N=3")
+        plt.title("Grav. Acc. (Windhorst and Polytrope)")
         plt.legend()
-        plt.xlabel('$ r [R_{\odot}] $')
-        plt.ylabel('$ \phi [] $')
+        plt.xlabel('$ r / R_{*} $')
+        plt.ylabel('$ \\phi (r) \\; [cm^{2} \\cdot s^{-2}] $')
         # plt.yscale("log")
         # plt.xscale("log")
         plt.show()
