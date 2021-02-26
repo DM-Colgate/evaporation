@@ -184,7 +184,7 @@ def proton_speed(xi, star):
 def mesa_proton_speed(Tchi, prof):
     u = []
     for i in range(len(Tchi)):
-    u.append(np.sqrt(2*Tchi[i]/1.6726219e-24)) # cm/s (cgs units)
+        u.append(np.sqrt(2*Tchi[i]/1.6726219e-24)) # cm/s (cgs units)
     return u
 
 # alpha/beta functions
@@ -300,11 +300,12 @@ def dm_speed(mx, star):
     ux = vx/star.get_vesc_surf() #Dimensionless
     return ux
 
-def mesa_dm_speed(mchi, Tchi, prof):
+def mesa_dm_speed(mchi, Tchi, phi, prof):
     '''average dm speed in star (isotropic)'''
+    Vesc = mesa_Vesc(phi, prof)
     mchi_g = mchi * 1.783e-24 #Converting GeV/c^2 to g
-    vchi = np.sqrt(2*kb*Tx/mx_g) #cm/s
-    uchi = vchi/star.get_vesc_surf() #Dimensionless
+    vchi = np.sqrt(2*k_cgs*Tchi/mchi_g) #cm/s
+    uchi = vchi/Vesc[0] #Dimensionless
     return uchi
 
 def f_x(z, mx, xi, star):
@@ -336,9 +337,9 @@ def R_integrated(mx, xi, sigma, star, vcut_inf = False):
         R = 4*np.pi * vesc**3 * mp.quad(lambda z: integrand_inf(z, mx, xi, sigma, star, vcut_inf), [0, np.inf])
     return R
 
-def mesa_Vesc(phi):
+def mesa_Vesc(phi, prof):
     vesc = []
-    factor = G*prof.star_mass*g_per_Msun/prof.radius_cm[0]
+    factor = G_cgs*prof.star_mass*g_per_Msun/prof.radius_cm[0]
     for i in range(len(phi)):
         vesc.append(np.sqrt(2*factor*(phi[0] - phi[i])))
     return vesc
@@ -347,13 +348,13 @@ def mesa_R_integrand(v, w, mchi, Tchi, prof, i):
     # the bit in the [ ]'s in Ilie's jan 21 2021 notes 
     grossterm = (chi_func(mesa_alpha("-", mchi, Tchi, v, w, prof), mesa_alpha("+", mchi, Tchi, v, w, prof)) + chi_func(mesa_beta("-", mchi, Tchi, v, w, prof), mesa_beta("-", mchi, Tchi, v, w, prof))*np.exp(mu(mchi)*(w**2 - v**2)/(mesa_proton_speed(Tchi, prof))[i]**2))
     # the bit not in the [ ]'s
-    lessgrossterm = 2/np.pi) * ((mu_plus_minus("+", mchi)**2)/mu(mchi)) * (v/w) * nchi[i] * sigma
+    lessgrossterm = (2/np.pi) * ((mu_plus_minus("+", mchi)**2)/mu(mchi)) * (v/w) * nchi[i] * sigma
     # take product
     return lessgrossterm*grossterm
 
-def mesa_R_integrated(mchi, nchi, phi, prof, sigma, vcut)
+def mesa_R_integrated(mchi, nchi, phi, prof, sigma, vcut):
     ''' returns a radial array, besides that idk whats going on here help'''
-    Vesc = mesa_Vesc(phi)
+    Vesc = mesa_Vesc(phi, prof)
     omega_p = []
     for i in range(len(phi)):
         # now we have to itegrate over velocity space..?!..?..
@@ -379,20 +380,23 @@ def mesa_nchi(mchi, prof, phi, Tchi):
     nchi returned is an array of DM number denisty in each mesa cell
     '''
     # mchi in grams
-    mchi_g = mx*1.783e-24
-    n_chi = []
-    for all i in phi:
+    mchi_g = mchi*1.783e-24
+    nchi = []
+    for i in range(len(phi)):
         # numerical DM number density profile for each DM mass (normalized)
         nchi.append(np.exp(-mchi_g*phi[i]/(k_cgs*Tchi)))
     return nchi
 
-def mesa_fchi_integrated(mchi, prof, v, w):
-    ux = dm_speed(mx, prof)
-    ue_xi = vesc_r_poly(xi, star)
-    vesc = star.get_vesc_surf()
-    f_x_val = np.exp(-z**2/ux**2) * ( np.pi**(3/2) * ux**3 * vesc**3 * (sc.erf(ue_xi/ux) - 2/np.sqrt(np.pi)*ue_xi/ux*np.exp(-ue_xi**2/ux**2) )  )**-1
+def mesa_fchi(mchi, Tchi, phi, prof, v, w):
+    uchi = mesa_dm_speed(mchi, Tchi, phi, prof)
+    ue = mesa_Vesc(phi, prof)
+    vesc = ue[0]
+    f_x_val = np.exp(-z**2/ux**2) * ( np.pi**(3/2) * ux**3 * vesc**3 * (sc.erf(ue/ux) - 2/np.sqrt(np.pi)*ue/ux*np.exp(-ue**2/ux**2) )  )**-1
     return f_x_val
 
+def mesa_fchi_integrated(mchi, Tchi, phi, prof, v, w):
+    # TODO
+    return f_x_val
 
 def upper_integrand(xi, mx, sigma, star, vcut_inf = False):
     return xi**2 * nx_xi(mx, xi, star) * R_integrated(mx, xi, sigma, star, vcut_inf)
@@ -405,10 +409,10 @@ def mesa_upper_integrand(mchi, sigma, phi, Tchi, prof, vcut):
     returns an array to be integrated wrt radius (?) vol
     '''
     # generate an array of DM number density
-    nchi = nchi(mchi, prof, phi, Tchi)
+    nchi = mesa_nchi(mchi, prof, phi, Tchi)
     up = []
     for i in range(len(nchi)):
-        up.append(nchi[i] * mesa_fchi_integrated(v, w)[i] * mesa_R_integrated(mchi, phi, prof, sigma, vcut)[i])
+        up.append(nchi[i] * mesa_fchi_integrated(mchi, Tchi, phi, prof, v, w)[i] * mesa_R_integrated(mchi, nchi, phi, prof, sigma, vcut)[i])
         # TODO radial array, volume integral.... hmmmm....
         # up.append(prof.radius_cm[i]**2 * nchi[i] * R_integrated(mchi, prof, sigma, vcut))
     return up
@@ -431,11 +435,11 @@ def evap_coeff(mx, sigma, star, vcut_inf = False):
     E = quad(upper_integrand, 0, xi1, args=(mx, sigma, star, vcut_inf))[0]/quad(lower_integrand, 0, xi1, args=(mx, sigma, star))[0]
     return E
 
-def mesa_evap_coeff(mx, sigma, prof, vcut):
+def mesa_evap_coeff(mchi, sigma, phi, Tchi, prof, vcut):
     # number of cells in mesa
     nz = len(prof.radius)
     # take integrals radially across the entire star
-    E = np.trapz(mesa_upper_integrand(mchi, sigma, phi, Tchi, prof, vcut), prof.radius_cm)/np.trapz(mesa_lower_integrand(mchi, sigma, phi, Tchi, prof), prof.radius_cm)
+    E = np.trapz(mesa_upper_integrand(mchi, sigma, phi, Tchi, prof, vcut), prof.radius_cm)/np.trapz(mesa_lower_integrand(mchi, sigma, phi, Tchi, prof, vcut), prof.radius_cm)
     return E
 
 def retrieve_tau(star_mass):
@@ -497,6 +501,7 @@ def main():
     global k_cgs
     global g_per_GeV
     global G_cgs
+    global g_per_Msun
     global m_p
     global xis
     global xis_frac
@@ -560,6 +565,12 @@ def main():
         for i in range(len(mchi_sample)):
             mu_sample.append(g_per_GeV * mchi_sample[i] / m_p)
             Tau_sample.append(Tchi_sample[i] / T_mesa[-1])
+
+        # calc evap rates
+        sigma = 1e-43
+        vcut = mesa_Vesc(phi_mesa, prof)
+        for i in range(len(mchi_sample)):
+            E_mesa = mesa_evap_coeff(mchi_sample[i], sigma, phi_mesa, Tchi_sample[i], prof, vcut)
 
     # define some pop III polytopic stars
     poly100 = PopIIIStar(100, 10**0.6147, 10**6.1470, 1.176e8, 32.3, 10**6)
@@ -645,10 +656,11 @@ def main():
 
     # evap vs mchi
     if args.evap == True:
-        plt.plot(mx, E_G, label = 'Numerical, $M_\star = %i$'%star.mass, ls = '-')
-        plt.plot(mx, E_ilie2, label = 'Approximate Solution (New)', ls = '--')
-        plt.plot(mx, E_ilie, label = 'Approximate Solution (Old)', ls = '-.')
-        plt.plot(mx, E_mesa, label = mesa_lab, ls = '-.')
+        plt.plot(mchi_sample, E_mesa, label = mesa_lab, ls = '-')
+        # plt.plot(mx, E_G, label = 'Numerical, $M_\star = %i$'%star.mass, ls = '-')
+        # plt.plot(mx, E_ilie2, label = 'Approximate Solution (New)', ls = '--')
+        # plt.plot(mx, E_ilie, label = 'Approximate Solution (Old)', ls = '-.')
+        # plt.plot(mx, E_mesa, label = mesa_lab, ls = '-.')
         plt.xscale('log')
         plt.yscale('log')
         plt.xlabel('$m_X$ [GeV]', fontsize = 15)
