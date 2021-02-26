@@ -1,8 +1,8 @@
 # Documentation
 ### Dependencies:
  - [py_mesa_reader](https://github.com/wmwolf/py_mesa_reader)
- - scipy
- - matplotlib
+ - [scipy](https://www.scipy.org/)
+ - [matplotlib](https://matplotlib.org/stable/index.html)
 
 ### Usage:
 Execute from the command line, in the directory that contains MESA log directories like so:
@@ -53,7 +53,13 @@ Just make sure to comment your code and add an explanitory commit message.
 
 # Issues
  - [X] Issues with the calculated potential from MESA's gravitational acceleration?
+
+
+# To Do
  - [ ] Implement MESA Evap. rates.
  - [ ] Implement N=3 polytrope Evap. rates.
  - [ ] Implement closed form Evap. approx.
  - [ ] Simultaneously plot multiple models and/or multiple stars.
+ - [ ] Add flag to specify polytropic index?
+ - [ ] Add flag to make HR plots with ZAMS marked?
+ - [ ] Autoidenitification of the model closest to ZAMS?
