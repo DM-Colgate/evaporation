@@ -478,6 +478,9 @@ def tau_fit(mx, star_mass): #Returns tau from fitting function based on star and
             tau_val = 1
     return tau_val
 
+def mesa_interpolate(x, y):
+    fit = interp1d(x, y, 5)
+    return fit
 
 ########
 # MAIN #
@@ -538,6 +541,14 @@ def main():
         r_mesa = prof.radius
         r_mesa_cgs = prof.radius_cm
         r_mesa_frac = calc_r_mesa_frac(prof)
+
+        # interpolation
+        Tcgs_mesafit = mesa_interpolate(prof.temperature, prof.radius)
+        rs = np.logspace(0, 1, num = 100)
+        # plt.xscale("log")
+        plt.plot(rs, Tcgs_mesafit(rs), ls = '-', linewidth = 1, label="spliiiine")
+        plt.scatter(prof.temperature, prof.radius, label="mesa")
+        plt.show()
 
         # read info about the MESA star
         mass = str(round(prof.star_mass, 3))
