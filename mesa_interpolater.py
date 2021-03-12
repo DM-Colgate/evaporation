@@ -45,26 +45,50 @@ def R311(r, T_chi, m_chi, sigma):
     '''Eq. 3.11 from Goulde 1987, normalized evap. rate'''
     #TODO numerical integration over phase space
     a1 = (2/np.pi)*(2*T(r)/m_chi)**(1/2)
+    # print("A1", a1)
     a2 = (T(r)/T_chi**(3/2))* sigma * n_p(r) * n_chi(r, T_chi, m_chi)
+    # print("A2", a2)
     b3 = np.exp(-1*(mu_plus(mu(m_chi))/xi(r, m_chi, T_chi))**2 *(m_chi*v_esc(r)**2/(2*T_chi)))
+    # print("B3", b3)
     c4 = mu(m_chi) * mu_minus(mu(m_chi)) / (T(r)*mu(m_chi)*xi(r, m_chi, T_chi)/T_chi)
+    # print("xi(r,mchi,tchi)", xi(r, m_chi, T_chi))
+    # print("mu(mchi)", mu(m_chi))
+    # print("mu_minus(mchi)", mu_minus(mu(m_chi)))
+    # print("T(r)*mu/Tchi", T(r)*mu(m_chi)/T_chi)
+    # print("C4", c4)
     d5 = (xi(r, m_chi, T_chi)**2) / (T(r)*mu(m_chi)/T_chi)
+    # print("D5", d5)
     d6 = mu_plus(mu(m_chi)) * mu_minus(mu(m_chi)) / (mu(m_chi))
+    # print("D6", d6)
     c7 = (mu_plus(mu(m_chi))**3) / (xi(r, m_chi, T_chi) * ( (T(r)*mu(m_chi)/T_chi - mu(m_chi))))
+    # print("C7", c7)
     b8 = chi(gamma('-',  r, m_chi, T_chi), gamma('+',  r, m_chi, T_chi))
+    # print("B8", b8)
     b9 = np.exp(-1* m_chi * v_c(r)**2 / (2*T_chi) * (mu(m_chi)*T_chi) / (T(r)*mu(m_chi)))
-    #TODO: in this expression does v_cutoff = w and v_escape = v?
+    # print("B9", b9)
     c10 = alpha('-', r, m_chi, v_c(r), v_esc(r)) * alpha('+', r, m_chi, v_c(r), v_esc(r))
+    # print("C10", c10)
     c11 = 1/(2*mu(m_chi))
+    # print("C11", c11)
     c12 = mu_minus(mu(m_chi))**2 *(1/mu(m_chi)) - (T_chi/(T(r)*mu(m_chi)))
+    # print("C12", c12)
     b13 = chi(alpha('+', r, m_chi, v_c(r), v_esc(r)), alpha('-', r, m_chi, v_c(r), v_esc(r)))
+    # print("B13", b13)
     b14 = np.exp(-1* m_chi * v_c(r)**2 / (2*T_chi)) * np.exp(-1*((m_chi*v_esc(r)**2 /2) - (m_chi*v_c(r)**2 /2))/T(r))
+    # print("B14", b14)
     b15 = mu_plus(mu(m_chi))**2 / ((T(r)*mu(m_chi)/T_chi) - mu(m_chi))
+    # print("B15", b15)
     b16 = chi(beta('-', r, m_chi, v_c(r), v_esc(r)), beta('+', r, m_chi, v_c(r), v_esc(r)))
+    # print("B16", b16)
     b17 = np.exp(-1 * (m_chi* v_chi(r, m_chi, T_chi)**2)/(2*T_chi) * alpha('-', r, m_chi, v_c(r), v_esc(r))**2)
+    # print("B17", b17)
     b18 = mu(m_chi) * alpha('+', r, m_chi, v_c(r), v_esc(r)) / (2*T(r)*mu(m_chi)/T_chi)
+    # print("B18", b18)
     b19 = np.exp(-1 * (m_chi* v_chi(r, m_chi, T_chi)**2)/(2*T_chi) * alpha('+', r, m_chi, v_c(r), v_esc(r))**2)
+    # print("B19", b19)
     b20 = mu(m_chi) * alpha('-', r, m_chi, v_c(r), v_esc(r)) / (2*T(r)*mu(m_chi)/T_chi)
+    # print("B20", b20)
+    # print("shell scattering rate is = ", a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20))
     return a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20)
 
 def v_chi(r, m_chi, T_chi):
@@ -108,7 +132,7 @@ def chi(a, b):
 
 def mu(m_chi):
     '''dimensional less DM mass'''
-    return g_per_GeV * m_chi / m_p
+    return m_chi / m_p
 
 def mu_plus(mu):
     return mu + 1 / 2
@@ -249,15 +273,14 @@ def main():
             # R_star = R_star_cgs
             # T_chi_sample.append(fsolve(SP85_EQ410, T_chi_guess, args=(m_chi, R_star))[0])
 
-
-        # read
+        # read DM temp from csv
         T_chi_csv = []
         m_chi_csv = []
         with open('TM4.csv') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             for row in csv_reader:
                 T_chi_csv.append(float(row[1]))
-                m_chi_csv.append(float(row[0]))
+                m_chi_csv.append(float(row[0])*g_per_GeV)
 
         # now fit interpolation functions to T_chi w.r.t m_chi
         Tchi_fit = interp(m_chi_csv, T_chi_csv)
@@ -276,12 +299,15 @@ def main():
         evap_sample = []
         sigma = 1*10**(-43)
         for i in range(len(m_chi_csv)):
-            print("Getting evap rate for m_chi =", m_chi_csv[i], "GeV...")
+            print("Getting evap rate for m_chi =", m_chi_csv[i], "g...")
             evap_sample.append(evap_rate(T_chi_csv[i], m_chi_csv[i], sigma))
 
+        m_chi_csv_GeV = []
+        for i in range(len(m_chi_csv)):
+            m_chi_csv_GeV.append(m_chi_csv[i]/g_per_GeV)
+
         # evap
-        print(evap_sample)
-        plt.plot(m_chi_sample, evap_sample, ls = '-', linewidth = 1, label=mesa_lab)
+        plt.plot(m_chi_csv_GeV, evap_sample, ls = '-', linewidth = 1, label=mesa_lab)
         plt.title("MESA DM Evap. Rate $100 M_{\\odot}$ (Windhorst)")
         plt.legend()
         plt.xlabel('$m_{\\chi}$ [Gev]')
