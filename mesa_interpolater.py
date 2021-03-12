@@ -130,31 +130,25 @@ def n_p(r):
     return x_mass_fraction_H_fit(r) * rho_fit(r) / m_p
 
 def phi_integrand(r):
+    # TODO: should this be -1???
     return grav_fit(r)
 
 def phi(r):
     ''' calculate potential from accleration given by mesa'''
-    #TODO problem here?
     return quad(phi_integrand, 0, r, limit=500)[0]
 
 def rho(r):
     return rho_fit(r)
 
 def SP85_EQ410_integrand(r, T_chi, m_chi):
-    # print("in the integrand mchi = ", m_chi)
-    # print("in the integrand tchi = ", T_chi)
     t1 = n_p(r)
     t2 = math.sqrt(m_p* T_chi + m_chi * T(r)/(m_chi*m_p))
     t3 = (T(r) - T_chi)
     t4 = math.exp((-1*m_chi*phi(r))/(k_cgs*T_chi))
-    # return n_p(r) * math.sqrt(m_p* T_chi + m_chi * T(r)/(m_chi*m_p)) * (T(r) - T_chi) * math.exp((-1*m_chi*phi(r))/(k_cgs*T_chi)) * r**2
     return t1 * t2 * t3 * t4 * r**2
 
 def SP85_EQ410(T_chi, m_chi, R_star):
     ''' uses MESA data in arrays, phi_mesa, n_mesa, prof.temperature, prof.radius_cm to evalute the integral in EQ. 4.10 from SP85'''
-    print("being itegrated rn for Tchi = ", T_chi)
-    print("and mchi = ", m_chi)
-    print("sp85 = ", quad(SP85_EQ410_integrand, 0, R_star, args=(T_chi, m_chi), limit=500)[0])
     return quad(SP85_EQ410_integrand, 0, R_star, args=(T_chi, m_chi), limit=500)[0]
 
 def normfactor(r, m_chi, T_chi):
@@ -189,9 +183,10 @@ def main():
 
     # main variables
     global m_p
+    # m_p = 0.9382720813 #GeV
     m_p = 1.6726231 * 10 ** (-24) # grams
     global g_per_GeV
-    g_per_GeV = 5.61 *10 ** (-23)
+    g_per_GeV = 1.783 *10 ** (-24)
     global G_cgs
     G_cgs = 6.6743*10**(-8) #cgs
     global k_cgs
@@ -247,56 +242,51 @@ def main():
         T_chi_sample = []
 
         # do MESA calcs and run thru all massses
-        for i in range(len(m_chi_sample)):
-            print("Solving Tchi for m_chi =", m_chi_sample[i], "GeV...")
+        # for i in range(len(m_chi_sample)):
+            # print("Solving Tchi for m_chi =", m_chi_sample[i], "GeV...")
             # use grams
-            m_chi = m_chi_sample_cgs[i]
-            R_star = R_star_cgs
-            # numerically solve
-            print(SP85_EQ410(T_chi_guess, m_chi, R_star))
-            T_chi_sample.append(fsolve(SP85_EQ410, T_chi_guess, args=(m_chi, R_star))[0])
-            # print(m_chi)
-            # print(T_chi_sample[i])
+            # m_chi = m_chi_sample_cgs[i]
+            # R_star = R_star_cgs
+            # T_chi_sample.append(fsolve(SP85_EQ410, T_chi_guess, args=(m_chi, R_star))[0])
+
+
+        # read
+        T_chi_csv = []
+        m_chi_csv = []
+        with open('TM4.csv') as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            for row in csv_reader:
+                T_chi_csv.append(float(row[1]))
+                m_chi_csv.append(float(row[0]))
 
         # now fit interpolation functions to T_chi w.r.t m_chi
-        Tchi_fit = interp(m_chi_sample, T_chi_sample)
+        Tchi_fit = interp(m_chi_csv, T_chi_csv)
 
-        # temp
-        # r = np.linspace(prof.radius_cm[0], prof.radius_cm[-1], 100)
-        # print(r)
-        # phisamp = []
-        # for i in range(len(r)):
-        #     phisamp.append(phi(r[i]))
-        # plt.plot(r, phisamp, ls = '-', linewidth = 1, label=mesa_lab)
-
-        print(T_chi_sample)
-        print(m_chi_sample)
-        plt.plot(m_chi_sample, T_chi_sample, ls = '-', linewidth = 1, label=mesa_lab)
-        plt.title("MESA DM Temperature $100 M_{\\odot}$ (Windhorst)")
-        plt.legend()
-        plt.xlabel('$m_{\\chi}$ [Gev]')
-        plt.ylabel('$T_{\\chi}$ [K]')
-        # plt.yscale("log")
+        # plt.plot(m_chi_csv, T_chi_csv, label=mesa_lab)
+        # plt.title("MESA DM Temperature $100 M_{\\odot}$ (Windhorst)")
+        # plt.legend()
+        # plt.xlabel('$m_{\\chi}$ [Gev]')
+        # plt.ylabel('$T_{\\chi}$ [K]')
+        # # plt.yscale("log")
         # plt.xscale("log")
-        plt.show()
-        plt.clf()
+        # plt.show()
+        # plt.clf()
 
         # now calc evap rates
         evap_sample = []
-        sigma = 1e-43
-        for i in range(len(m_chi_sample)):
-            print("Getting evap rate for m_chi =", m_chi_sample[i], "GeV...")
-            evap_sample.append(evap_rate(T_chi_sample[i], m_chi_sample_cgs[i], sigma))
-
-        print(evap_sample)
+        sigma = 1*10**(-43)
+        for i in range(len(m_chi_csv)):
+            print("Getting evap rate for m_chi =", m_chi_csv[i], "GeV...")
+            evap_sample.append(evap_rate(T_chi_csv[i], m_chi_csv[i], sigma))
 
         # evap
+        print(evap_sample)
         plt.plot(m_chi_sample, evap_sample, ls = '-', linewidth = 1, label=mesa_lab)
         plt.title("MESA DM Evap. Rate $100 M_{\\odot}$ (Windhorst)")
         plt.legend()
         plt.xlabel('$m_{\\chi}$ [Gev]')
         plt.ylabel('$E$ [?]')
-        # plt.yscale("log")
+        plt.yscale("log")
         plt.xscale("log")
         plt.show()
         plt.clf()
