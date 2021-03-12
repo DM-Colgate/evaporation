@@ -43,6 +43,7 @@ def interp(x, y):
 
 def R311(r, T_chi, m_chi, sigma):
     '''Eq. 3.11 from Goulde 1987, normalized evap. rate'''
+    #TODO numerical integration over phase space
     a1 = (2/np.pi)*(2*T(r)/m_chi)**(1/2)
     a2 = (T(r)/T_chi**(3/2))* sigma * n_p(r) * n_chi(r, T_chi, m_chi)
     b3 = np.exp(-1*(mu_plus(mu(m_chi))/xi(r, m_chi, T_chi))**2 *(m_chi*v_esc(r)**2/(2*T_chi)))
@@ -129,27 +130,32 @@ def n_p(r):
     return x_mass_fraction_H_fit(r) * rho_fit(r) / m_p
 
 def phi_integrand(r):
-    return -1 * grav_fit(r)
+    return grav_fit(r)
 
 def phi(r):
     ''' calculate potential from accleration given by mesa'''
     #TODO problem here?
-    return quad(phi_integrand, 0, r)[0]
+    return quad(phi_integrand, 0, r, limit=500)[0]
 
 def rho(r):
     return rho_fit(r)
 
 def SP85_EQ410_integrand(r, T_chi, m_chi):
+    # print("in the integrand mchi = ", m_chi)
+    # print("in the integrand tchi = ", T_chi)
     t1 = n_p(r)
     t2 = math.sqrt(m_p* T_chi + m_chi * T(r)/(m_chi*m_p))
     t3 = (T(r) - T_chi)
-    t4 = np.exp((-1*m_chi*phi(r))/(k_cgs*T_chi))
+    t4 = math.exp((-1*m_chi*phi(r))/(k_cgs*T_chi))
     # return n_p(r) * math.sqrt(m_p* T_chi + m_chi * T(r)/(m_chi*m_p)) * (T(r) - T_chi) * math.exp((-1*m_chi*phi(r))/(k_cgs*T_chi)) * r**2
     return t1 * t2 * t3 * t4 * r**2
 
 def SP85_EQ410(T_chi, m_chi, R_star):
     ''' uses MESA data in arrays, phi_mesa, n_mesa, prof.temperature, prof.radius_cm to evalute the integral in EQ. 4.10 from SP85'''
-    return quad(SP85_EQ410_integrand, 0, R_star, args=(T_chi, m_chi))[0]
+    print("being itegrated rn for Tchi = ", T_chi)
+    print("and mchi = ", m_chi)
+    print("sp85 = ", quad(SP85_EQ410_integrand, 0, R_star, args=(T_chi, m_chi), limit=500)[0])
+    return quad(SP85_EQ410_integrand, 0, R_star, args=(T_chi, m_chi), limit=500)[0]
 
 def normfactor(r, m_chi, T_chi):
     t1 = mp.erf(v_c(r)/v_chi(r, m_chi, T_chi))
@@ -161,7 +167,7 @@ def evap_rate_integrand(r, T_chi, m_chi, sigma):
     return R311(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
 
 def evap_rate(T_chi, m_chi, sigma):
-    return quad(evap_rate_integrand, 0, R_star_cgs, args=(T_chi, m_chi, sigma))[0]
+    return quad(evap_rate_integrand, 0, R_star_cgs, args=(T_chi, m_chi, sigma), limit=500)[0] * quad(n_chi, 0, R_star_cgs, args=(T_chi, m_chi), limit=500)[0]
 
 ########
 # MAIN #
@@ -189,7 +195,7 @@ def main():
     global G_cgs
     G_cgs = 6.6743*10**(-8) #cgs
     global k_cgs
-    k_cgs = 1.3807 * 10 ** (-16) # cm2 g s-2 K-1 
+    k_cgs = 1.3807 * 10 ** (-16) # cm2 g s-2 K-1
     m_p_cgs = 1.6726231 * 10 ** (-24) # grams
     g_per_Msun = 1.988*10**33
     cm_per_Rsun = 1.436 * 10**(-11)
@@ -247,19 +253,31 @@ def main():
             m_chi = m_chi_sample_cgs[i]
             R_star = R_star_cgs
             # numerically solve
+            print(SP85_EQ410(T_chi_guess, m_chi, R_star))
             T_chi_sample.append(fsolve(SP85_EQ410, T_chi_guess, args=(m_chi, R_star))[0])
+            # print(m_chi)
+            # print(T_chi_sample[i])
 
         # now fit interpolation functions to T_chi w.r.t m_chi
         Tchi_fit = interp(m_chi_sample, T_chi_sample)
 
         # temp
+        # r = np.linspace(prof.radius_cm[0], prof.radius_cm[-1], 100)
+        # print(r)
+        # phisamp = []
+        # for i in range(len(r)):
+        #     phisamp.append(phi(r[i]))
+        # plt.plot(r, phisamp, ls = '-', linewidth = 1, label=mesa_lab)
+
+        print(T_chi_sample)
+        print(m_chi_sample)
         plt.plot(m_chi_sample, T_chi_sample, ls = '-', linewidth = 1, label=mesa_lab)
         plt.title("MESA DM Temperature $100 M_{\\odot}$ (Windhorst)")
         plt.legend()
         plt.xlabel('$m_{\\chi}$ [Gev]')
         plt.ylabel('$T_{\\chi}$ [K]')
         # plt.yscale("log")
-        plt.xscale("log")
+        # plt.xscale("log")
         plt.show()
         plt.clf()
 
