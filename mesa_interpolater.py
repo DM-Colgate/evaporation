@@ -285,15 +285,21 @@ def main():
         # now fit interpolation functions to T_chi w.r.t m_chi
         Tchi_fit = interp(m_chi_csv, T_chi_csv)
 
-        # plt.plot(m_chi_csv, T_chi_csv, label=mesa_lab)
-        # plt.title("MESA DM Temperature $100 M_{\\odot}$ (Windhorst)")
-        # plt.legend()
-        # plt.xlabel('$m_{\\chi}$ [Gev]')
-        # plt.ylabel('$T_{\\chi}$ [K]')
-        # # plt.yscale("log")
-        # plt.xscale("log")
-        # plt.show()
-        # plt.clf()
+        r = np.linspace(prof.radius_cm[0], prof.radius_cm[-1], 100)
+        n_chi_sample = []
+        for i in range(len(r)):
+            n_chi_sample.append(n_chi(r[i], T_chi_csv[12], m_chi_csv[12]))
+        print(quad(n_chi, 0, prof.radius_cm[0], args=(T_chi_csv[12], m_chi_csv[12]))[0])
+
+        plt.plot(r, n_chi_sample, label=mesa_lab)
+        plt.title("MESA DM Density $100 M_{\\odot}$ (Windhorst)")
+        plt.legend()
+        plt.xlabel('$r$ [cm]')
+        plt.ylabel('$n_{\\chi}$ [m$^{-3}$]')
+        # plt.yscale("log")
+        plt.xscale("log")
+        plt.show()
+        plt.clf()
 
         # now calc evap rates
         evap_sample = []
@@ -311,7 +317,7 @@ def main():
         plt.title("MESA DM Evap. Rate $100 M_{\\odot}$ (Windhorst)")
         plt.legend()
         plt.xlabel('$m_{\\chi}$ [Gev]')
-        plt.ylabel('$E$ [?]')
+        plt.ylabel('$E$ [$s^{-1}$]')
         plt.yscale("log")
         plt.xscale("log")
         plt.show()
