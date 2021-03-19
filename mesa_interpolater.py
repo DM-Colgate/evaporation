@@ -45,51 +45,60 @@ def R311(r, T_chi, m_chi, sigma):
     '''Eq. 3.11 from Goulde 1987, normalized evap. rate'''
     #TODO numerical integration over phase space
     a1 = (2/np.pi)*(2*T(r)/m_chi)**(1/2)
-    # print("A1", a1)
     a2 = (T(r)/T_chi**(3/2))* sigma * n_p(r) * n_chi(r, T_chi, m_chi)
-    # print("A2", a2)
     b3 = np.exp(-1*(mu_plus(mu(m_chi))/xi(r, m_chi, T_chi))**2 *(m_chi*v_esc(r)**2/(2*T_chi)))
-    # print("B3", b3)
     c4 = mu(m_chi) * mu_minus(mu(m_chi)) / (T(r)*mu(m_chi)*xi(r, m_chi, T_chi)/T_chi)
-    # print("xi(r,mchi,tchi)", xi(r, m_chi, T_chi))
-    # print("mu(mchi)", mu(m_chi))
-    # print("mu_minus(mchi)", mu_minus(mu(m_chi)))
-    # print("T(r)*mu/Tchi", T(r)*mu(m_chi)/T_chi)
-    # print("C4", c4)
     d5 = (xi(r, m_chi, T_chi)**2) / (T(r)*mu(m_chi)/T_chi)
-    # print("D5", d5)
     d6 = mu_plus(mu(m_chi)) * mu_minus(mu(m_chi)) / (mu(m_chi))
-    # print("D6", d6)
     c7 = (mu_plus(mu(m_chi))**3) / (xi(r, m_chi, T_chi) * ( (T(r)*mu(m_chi)/T_chi - mu(m_chi))))
-    # print("C7", c7)
     b8 = chi(gamma('-',  r, m_chi, T_chi), gamma('+',  r, m_chi, T_chi))
-    # print("B8", b8)
     b9 = np.exp(-1* m_chi * v_c(r)**2 / (2*T_chi) * (mu(m_chi)*T_chi) / (T(r)*mu(m_chi)))
-    # print("B9", b9)
     c10 = alpha('-', r, m_chi, v_c(r), v_esc(r)) * alpha('+', r, m_chi, v_c(r), v_esc(r))
-    # print("C10", c10)
     c11 = 1/(2*mu(m_chi))
-    # print("C11", c11)
     c12 = mu_minus(mu(m_chi))**2 *(1/mu(m_chi)) - (T_chi/(T(r)*mu(m_chi)))
-    # print("C12", c12)
     b13 = chi(alpha('+', r, m_chi, v_c(r), v_esc(r)), alpha('-', r, m_chi, v_c(r), v_esc(r)))
-    # print("B13", b13)
     b14 = np.exp(-1* m_chi * v_c(r)**2 / (2*T_chi)) * np.exp(-1*((m_chi*v_esc(r)**2 /2) - (m_chi*v_c(r)**2 /2))/T(r))
-    # print("B14", b14)
     b15 = mu_plus(mu(m_chi))**2 / ((T(r)*mu(m_chi)/T_chi) - mu(m_chi))
-    # print("B15", b15)
     b16 = chi(beta('-', r, m_chi, v_c(r), v_esc(r)), beta('+', r, m_chi, v_c(r), v_esc(r)))
-    # print("B16", b16)
     b17 = np.exp(-1 * (m_chi* v_chi(r, m_chi, T_chi)**2)/(2*T_chi) * alpha('-', r, m_chi, v_c(r), v_esc(r))**2)
-    # print("B17", b17)
     b18 = mu(m_chi) * alpha('+', r, m_chi, v_c(r), v_esc(r)) / (2*T(r)*mu(m_chi)/T_chi)
-    # print("B18", b18)
     b19 = np.exp(-1 * (m_chi* v_chi(r, m_chi, T_chi)**2)/(2*T_chi) * alpha('+', r, m_chi, v_c(r), v_esc(r))**2)
-    # print("B19", b19)
     b20 = mu(m_chi) * alpha('-', r, m_chi, v_c(r), v_esc(r)) / (2*T(r)*mu(m_chi)/T_chi)
-    # print("B20", b20)
     # print("shell scattering rate is = ", a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20))
     return a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20)
+
+def Omegaplus37(r, w, T_chi, m_chi, sigma):
+    '''Eq. 3.7 from Goulde 1987'''
+    a1 = (2*T(r))/(2*m_p*np.pi**(1/2))
+    a2 = 1/(mu(m_chi)**2)
+    a3 = sigma*n_p(r)/w
+    b4 = mu(m_chi)
+    c5 = alpha('+', r, m_chi, w, v_esc(r)) * np.exp(-1*(alpha('-', r, m_chi, w, v_esc(r)))**2)
+    c6 = alpha('-', r, m_chi, w, v_esc(r)) * np.exp(-1*(alpha('+', r, m_chi, w, v_esc(r)))**2)
+    c7 = mu(m_chi)
+    c8 = alpha('-', r, m_chi, w, v_esc(r)) * np.exp(-1*(alpha('+', r, m_chi, w, v_esc(r)))**2)
+    c9 = 2 * mu(m_chi) * alpha('+', r, m_chi, w, v_esc(r)) * alpha('-', r, m_chi, w, v_esc(r))
+    c9 = 2 * mu_plus(mu(m_chi)) * mu_minus(mu(m_chi))
+    b10 = chi(alpha('-', r, m_chi, w, v_esc(r)), alpha('+', r, m_chi, w, v_esc(r)))
+    b11 = 2 * (mu_plus(mu(m_chi)))**2
+    b12 = chi(beta('-', r, m_chi, w, v_esc(r)), beta('+', r, m_chi, w, v_esc(r)))
+    b13 = np.exp(-1* m_chi * (v_esc(r)**2 - w**2) / (2*T(r)))
+    return a1*a2*a3*(b4*(c5 - c6) + (c7 - c8 - c9)*b10 + b11*b12*b13)
+
+def f_w38(r, w, T_chi, m_chi):
+    '''Eq. 3.8 from Goulde 1987'''
+    a1 = 4/(np.pi**(1/2))
+    a2 = m_chi / ((2*T_chi)**(3/2))
+    a3 = n_chi(r, T_chi, m_chi) * w**2
+    a4 = np.exp(-1 * m_chi * w**2 /(2* T_chi))
+    a5 = np.heaviside(v_c(r) - w, 0.5)
+    return a1*a2*a3*a4*a5
+
+def R39_integrand(w, r, T_chi, m_chi, sigma):
+    return f_w38(r, w, T_chi, m_chi)*Omegaplus37(r, w, T_chi, m_chi, sigma)
+
+def R39(r, T_chi, m_chi, sigma):
+    return quad(R39_integrand, 0, np.inf, args=(r, T_chi, m_chi, sigma), limit=500)[0]
 
 def v_chi(r, m_chi, T_chi):
     return np.sqrt(2*T_chi/m_chi)
@@ -182,7 +191,10 @@ def normfactor(r, m_chi, T_chi):
     return t1 - t2*t3
 
 def evap_rate_integrand(r, T_chi, m_chi, sigma):
-    return R311(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
+    r311 =  R311(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
+    r39 =  R39(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
+    print("DIFF = ", r39-r311)
+    return r39
 
 def evap_rate(T_chi, m_chi, sigma):
     return quad(evap_rate_integrand, 0, R_star_cgs, args=(T_chi, m_chi, sigma), limit=500)[0] * quad(n_chi, 0, R_star_cgs, args=(T_chi, m_chi), limit=500)[0]
@@ -298,7 +310,7 @@ def main():
         plt.ylabel('$n_{\\chi}$ [m$^{-3}$]')
         # plt.yscale("log")
         plt.xscale("log")
-        plt.show()
+        # plt.show()
         plt.clf()
 
         # now calc evap rates
