@@ -153,10 +153,23 @@ def n_chi(r, T_chi, m_chi):
 def alpha(pm, r, m_chi, w, v):
     '''made up goulde function'''
     if (pm == '+'):
-        val = (m_p/(2 * T(r)))**(1/2) * (mu_plus(mu(m_chi)) * v + mu_minus(mu(m_chi)) * w)
+        val = (m_p/(2 * k_cgs * T(r)))**(1/2) * (mu_plus(mu(m_chi)) * v + mu_minus(mu(m_chi)) * w)
     if (pm == '-'):
-        val = (m_p/(2 * T(r)))**(1/2) * (mu_plus(mu(m_chi)) * v - mu_minus(mu(m_chi)) * w)
+        val = (m_p/(2 * k_cgs* T(r)))**(1/2) * (mu_plus(mu(m_chi)) * v - mu_minus(mu(m_chi)) * w)
     return val
+
+def caleb_alpha(plus_minus, mx, q, z, xi, star, r):
+    # l = proton_speed(xi, star)
+    # r is an array here
+    l = (m_p/(2*k_cgs*T(xi*6.89*r[-1])))**(1/2)
+    if (plus_minus == '+'):
+        # alpha_val = (mu_plus_minus('+', mx)*q + mu_plus_minus('-', mx)*z)/l
+        alpha_val = (caleb_mu_plus_minus('+', mx*g_per_GeV)*q + caleb_mu_plus_minus('-', mx*g_per_GeV)*z)*l
+    elif(plus_minus == '-'):
+        # alpha_val = (mu_plus_minus('+', mx)*q - mu_plus_minus('-', mx)*z)/l
+        alpha_val = (caleb_mu_plus_minus('+', mx*g_per_GeV)*q - caleb_mu_plus_minus('-', mx*g_per_GeV)*z)*l
+    return alpha_val
+
 
 def beta(pm, r, m_chi, w, v):
     '''made up goulde function'''
@@ -259,18 +272,6 @@ def evap_rate_integrand(r, T_chi, m_chi, sigma):
 def evap_rate(T_chi, m_chi, sigma):
     return quad(evap_rate_integrand, 0, R_star_cgs, args=(T_chi, m_chi, sigma), limit=500)[0] * quad(n_chi, 0, R_star_cgs, args=(T_chi, m_chi), limit=500)[0]
 
-
-def caleb_alpha(plus_minus, mx, q, z, xi, star, r):
-    # l = proton_speed(xi, star)
-    # r is an array here
-    l = (m_p/(2*T(xi*r[-1])))**(1/2)
-    if (plus_minus == '+'):
-        # alpha_val = (mu_plus_minus('+', mx)*q + mu_plus_minus('-', mx)*z)/l
-        alpha_val = (caleb_mu_plus_minus('+', mx*g_per_GeV)*q + caleb_mu_plus_minus('-', mx*g_per_GeV)*z)*l
-    elif(plus_minus == '-'):
-        # alpha_val = (mu_plus_minus('+', mx)*q - mu_plus_minus('-', mx)*z)/l
-        alpha_val = (caleb_mu_plus_minus('+', mx*g_per_GeV)*q - caleb_mu_plus_minus('-', mx*g_per_GeV)*z)*l
-    return alpha_val
 
 def caleb_beta(plus_minus, mx, q, z, xi, star, r):
     # r is an array here
@@ -413,7 +414,8 @@ def main():
 
         # BACK TO MAIN
         # make a linear array based on the radius of the star in cm
-        r = np.linspace(prof.radius_cm[0], prof.radius_cm[-1], 25)
+        r = np.linspace(prof.radius_cm[-1], prof.radius_cm[0], 25)
+        print(r)
 
         # PLOT ARRAYS FOR CHIs
         # ab_sample = np.linspace(5*10*7, 10**9, 100)
@@ -464,7 +466,7 @@ def main():
         plt.ylabel("$\mu$")
         plt.yscale("log")
         plt.xscale("log")
-        # plt.show()
+        plt.show()
         plt.clf()
 
         # DEBUGING 
@@ -473,7 +475,7 @@ def main():
         for i in range(len(r)):
             for j in range(len(m_chi_sample_cgs)):
                 print("Calculating alpha, i = ", i, "/", len(r), ", j = ", j, "/", len(m_chi_sample_cgs))
-                caleb_alpha_sample[i,j] = caleb_alpha("+", m_chi_sample_cgs[j], 0.5*v_esc(r[i]), v_esc(r[i]), r[i]/r[-1], M100, r)
+                # caleb_alpha_sample[i,j] = caleb_alpha("+", m_chi_sample_cgs[j], 0.5*v_esc(r[i]), v_esc(r[i]), r[i]/(6.89*r[-1]), M100, r)
         plt.pcolormesh(m_chi_sample_cgs, r, caleb_alpha_sample, cmap=palette)
         cbar = plt.colorbar()
         # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
@@ -485,7 +487,7 @@ def main():
         plt.ylabel("$m_{\chi}$ [g]")
         # plt.yscale("log")
         # plt.xscale("log")
-        plt.show()
+        # plt.show()
         plt.clf()
 
         # PLOT ARRAYS FOR ALPHA
@@ -494,17 +496,17 @@ def main():
             for j in range(len(m_chi_sample_cgs)):
                 print("Calculating alpha, i = ", i, "/", len(r), ", j = ", j, "/", len(m_chi_sample_cgs))
                 alpha_sample[i,j] = alpha("+", r[i], m_chi_sample_cgs[j], 0.5*v_esc(r[i]), v_esc(r[i]))
-        plt.pcolormesh(m_chi_sample_cgs, r, alpha_sample, cmap=palette)
+        plt.pcolormesh(m_chi_sample, r, alpha_sample, cmap=palette)
         cbar = plt.colorbar()
         # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
         # cbar.set_ticks(list(np.linspace(9, 19, 11)))
         plt.title("Gould Alpha Function: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
         # plt.legend()
-        plt.xlabel('$r$ [cm]')
+        plt.ylabel('$r$ [cm]')
         # plt.ylim([0, 1.2*10**17])
-        plt.ylabel("$m_{\chi}$ [g]")
+        plt.xlabel("$m_{\chi}$ [GeV]")
         # plt.yscale("log")
-        # plt.xscale("log")
+        plt.xscale("log")
         plt.show()
         plt.clf()
 
