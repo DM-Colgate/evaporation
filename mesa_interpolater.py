@@ -162,16 +162,31 @@ def n_p(r):
     ''' calculate proton number density using rho given by mesa'''
     return x_mass_fraction_H_fit(r) * rho_fit(r) / m_p
 
+#TODO: integrate over mass to calculate accelation without using the acc parameter from MESA
+#TODO: integrate 0->r
 def phi_integrand(r):
     # TODO: should this be -1???
     return grav_fit(r)
 
 def phi(r):
     ''' calculate potential from accleration given by mesa'''
+    # print(quad(phi_integrand, 0, r, limit=500)[0])
+    # print(r)
     return quad(phi_integrand, 0, r, limit=500)[0]
+
+def phi2_integrand(r):
+    # TODO: should this be -1???
+    return G_cgs*mass_enc(r)/(r**2)
+
+def phi2(r):
+    ''' calculate potential from accleration given by mesa'''
+    return quad(phi2_integrand, 0, r, limit=500)[0]
 
 def rho(r):
     return rho_fit(r)
+
+def mass_enc(r):
+    return mass_enc_fit(r)
 
 def SP85_EQ410_integrand(r, T_chi, m_chi):
     t1 = n_p(r)
@@ -194,6 +209,7 @@ def evap_rate_integrand(r, T_chi, m_chi, sigma):
     r311 =  R311(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
     r39 =  R39(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
     print("DIFF = ", r39-r311)
+    diff.append(r39-r311)
     return r39
 
 def evap_rate(T_chi, m_chi, sigma):
@@ -231,6 +247,9 @@ def main():
     g_per_Msun = 1.988*10**33
     cm_per_Rsun = 1.436 * 10**(-11)
 
+    global diff
+    diff = []
+
     # ploting stuff
     fig = plt.figure(figsize = (12,8))
     plt.style.use('fast')
@@ -259,6 +278,8 @@ def main():
         grav_fit = interp(prof.radius_cm, prof.grav)
         global x_mass_fraction_H_fit
         x_mass_fraction_H_fit = interp(prof.radius_cm, prof.x_mass_fraction_H)
+        global mass_enc_fit
+        mass_enc_fit = interp(prof.radius_cm, prof.mass)
         global M_star_cgs
         M_star_cgs = prof.star_mass * g_per_Msun
         global R_star_cgs
@@ -298,24 +319,31 @@ def main():
         Tchi_fit = interp(m_chi_csv, T_chi_csv)
 
         r = np.linspace(prof.radius_cm[0], prof.radius_cm[-1], 100)
-        n_chi_sample = []
+        sigma = 1*10**(-43)
+        R311_sample = []
+        phi2_samp = []
+        phi_samp = []
         for i in range(len(r)):
-            n_chi_sample.append(n_chi(r[i], T_chi_csv[12], m_chi_csv[12]))
-        print(quad(n_chi, 0, prof.radius_cm[0], args=(T_chi_csv[12], m_chi_csv[12]))[0])
+            phi2_samp.append(phi2(r[i]))
+            phi_samp.append(phi(r[i]))
+            # R311_sample.append(R311(r[i], Tchi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma))
+            # n_chi_sample.append(n_chi(r[i], T_chi_csv[12], m_chi_csv[12]))
+        # print(quad(n_chi, 0, prof.radius_cm[0], args=(T_chi_csv[12], m_chi_csv[12]))[0])
 
-        plt.plot(r, n_chi_sample, label=mesa_lab)
-        plt.title("MESA DM Density $100 M_{\\odot}$ (Windhorst)")
+        plt.plot(r, phi2_samp, label="phi2")
+        # plt.plot(r, phi_samp, color="green", label="phi2")
+        # plt.title("10^2 GeV, 10^-43 cm^-2, 100 Msun")
+        plt.title("phi2")
         plt.legend()
-        plt.xlabel('$r$ [cm]')
-        plt.ylabel('$n_{\\chi}$ [m$^{-3}$]')
+        # plt.xlabel('$r$ [cm]')
+        # plt.ylabel('R 3.11')
         # plt.yscale("log")
-        plt.xscale("log")
-        # plt.show()
+        # plt.xscale("log")
+        plt.show()
         plt.clf()
 
         # now calc evap rates
         evap_sample = []
-        sigma = 1*10**(-43)
         for i in range(len(m_chi_csv)):
             print("Getting evap rate for m_chi =", m_chi_csv[i], "g...")
             evap_sample.append(evap_rate(T_chi_csv[i], m_chi_csv[i], sigma))
@@ -326,6 +354,7 @@ def main():
 
         # evap
         plt.plot(m_chi_csv_GeV, evap_sample, ls = '-', linewidth = 1, label=mesa_lab)
+        plt.plot(m_chi_csv_GeV, diff, ls = '-', linewidth = 1, label="diff")
         plt.title("MESA DM Evap. Rate $100 M_{\\odot}$ (Windhorst)")
         plt.legend()
         plt.xlabel('$m_{\\chi}$ [Gev]')
