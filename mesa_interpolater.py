@@ -495,7 +495,7 @@ def main():
         for i in range(len(r)):
             for j in range(len(m_chi_sample_cgs)):
                 print("Calculating alpha, i = ", i, "/", len(r), ", j = ", j, "/", len(m_chi_sample_cgs))
-                alpha_sample[i,j] = alpha("+", r[i], m_chi_sample_cgs[j], 0.5*v_esc(r[i]), v_esc(r[i]))
+                # alpha_sample[i,j] = alpha("+", r[i], m_chi_sample_cgs[j], 0.5*v_esc(r[-1]), v_esc(r[i]))
         plt.pcolormesh(m_chi_sample, r, alpha_sample, cmap=palette)
         cbar = plt.colorbar()
         # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
@@ -507,7 +507,7 @@ def main():
         plt.xlabel("$m_{\chi}$ [GeV]")
         # plt.yscale("log")
         plt.xscale("log")
-        plt.show()
+        # plt.show()
         plt.clf()
 
         # PLOT ARRAYS FOR PHI
@@ -574,7 +574,7 @@ def main():
 
             # PLOT
             plt.plot(m_chi_csv_GeV, evap_sample, ls = '-', linewidth = 1, label=mesa_lab)
-            plt.plot(m_chi_csv_GeV, diff, ls = '-', linewidth = 1, label="diff")
+            # plt.plot(m_chi_csv_GeV, diff, ls = '-', linewidth = 1, label="diff")
             plt.title("MESA DM Evap. Rate $100 M_{\\odot}$ (Windhorst)")
             plt.legend()
             plt.xlabel('$m_{\\chi}$ [Gev]')
