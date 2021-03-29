@@ -5,6 +5,12 @@
  - [matplotlib](https://matplotlib.org/stable/index.html)
 
 ### Usage:
+NOTE: Currently debuging and trying to get evaporation to work inside of `mesa_interpolator.py`, to run do:
+```
+./mesa_interpolater.py -D Ilie4_ii -p 700 -T
+```
+One I get reasonable evap I'll reorganize and get all the flags working again.
+
 Execute from the command line, in the directory that contains MESA log directories like so:
 ```
 ├── evap_snapshot.py
