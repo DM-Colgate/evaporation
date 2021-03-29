@@ -88,7 +88,7 @@ def R311(r, T_chi, m_chi, sigma):
     '''Eq. 3.11 from Goulde 1987, normalized evap. rate'''
     #TODO numerical integration over phase space
     a1 = (2/np.pi)*(2*T(r)/m_chi)**(1/2)
-    a2 = (T(r)/T_chi**(3/2))* sigma * n_p(r) * n_chi(r, T_chi, m_chi)
+    a2 = (T(r)/T_chi)**(3/2)* sigma * n_p(r) * n_chi(r, T_chi, m_chi)
     b3 = np.exp(-1*(mu_plus(mu(m_chi))/xi(r, m_chi, T_chi))**2 *(m_chi*v_esc(r)**2/(2*T_chi)))
     c4 = mu(m_chi) * mu_minus(mu(m_chi)) / (T(r)*mu(m_chi)*xi(r, m_chi, T_chi)/T_chi)
     d5 = (xi(r, m_chi, T_chi)**2) / (T(r)*mu(m_chi)/T_chi)
@@ -96,10 +96,10 @@ def R311(r, T_chi, m_chi, sigma):
     c7 = (mu_plus(mu(m_chi))**3) / (xi(r, m_chi, T_chi) * ( (T(r)*mu(m_chi)/T_chi - mu(m_chi))))
     b8 = chi(gamma('-',  r, m_chi, T_chi), gamma('+',  r, m_chi, T_chi))
     b9 = np.exp(-1* m_chi * v_c(r)**2 / (2*T_chi) * (mu(m_chi)*T_chi) / (T(r)*mu(m_chi)))
-    c10 = alpha('-', r, m_chi, v_c(r), v_esc(r)) * alpha('+', r, m_chi, v_c(r), v_esc(r))
+    c10 = alpha('+', r, m_chi, v_c(r), v_esc(r)) * alpha('-', r, m_chi, v_c(r), v_esc(r))
     c11 = 1/(2*mu(m_chi))
     c12 = mu_minus(mu(m_chi))**2 *(1/mu(m_chi)) - (T_chi/(T(r)*mu(m_chi)))
-    b13 = chi(alpha('+', r, m_chi, v_c(r), v_esc(r)), alpha('-', r, m_chi, v_c(r), v_esc(r)))
+    b13 = chi(alpha('-', r, m_chi, v_c(r), v_esc(r)), alpha('+', r, m_chi, v_c(r), v_esc(r)))
     b14 = np.exp(-1* m_chi * v_c(r)**2 / (2*T_chi)) * np.exp(-1*((m_chi*v_esc(r)**2 /2) - (m_chi*v_c(r)**2 /2))/T(r))
     b15 = mu_plus(mu(m_chi))**2 / ((T(r)*mu(m_chi)/T_chi) - mu(m_chi))
     b16 = chi(beta('-', r, m_chi, v_c(r), v_esc(r)), beta('+', r, m_chi, v_c(r), v_esc(r)))
@@ -108,6 +108,31 @@ def R311(r, T_chi, m_chi, sigma):
     b19 = np.exp(-1 * (m_chi* v_chi(r, m_chi, T_chi)**2)/(2*T_chi) * alpha('+', r, m_chi, v_c(r), v_esc(r))**2)
     b20 = mu(m_chi) * alpha('-', r, m_chi, v_c(r), v_esc(r)) / (2*T(r)*mu(m_chi)/T_chi)
     # print("shell scattering rate is = ", a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20))
+    return a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20)
+
+def R311_2(r, T_chi, m_chi, sigma):
+    '''Eq. 3.11 from Goulde 1987, normalized evap. rate'''
+    #TODO numerical integration over phase space
+    a1 = (2/np.pi) * np.sqrt((2*T(r))/(m_chi))
+    a2 = (T(r)/T_chi)**(1.5) * sigma * n_p(r) * n_chi(r, T_chi, m_chi)
+    b3 = np.exp(-1* (mu_plus(mu(m_chi)) / xi_2(r, m_chi, T_chi))**2 * (E_e(m_chi, v_esc(r))/T_chi))
+    c4 = (mu(m_chi) * mu_minus(mu(m_chi))) / (nu(r, m_chi, T_chi) * xi_2(r, m_chi, T_chi))
+    d5 = xi_2(r, m_chi, T_chi)**2 * nu(r, m_chi, T_chi)
+    d6 = (mu_plus(mu(m_chi)) * mu_minus(mu(m_chi))) / (mu(m_chi))
+    c7 = (mu_plus(mu(m_chi))**3 )/( xi_2(r, m_chi, T_chi) * (nu(r, m_chi, T_chi) - mu(m_chi)))
+    b8 = chi(gamma_2('-', r, m_chi, T_chi, v_c(r), v_esc(r)), gamma_2('+', r, m_chi, T_chi, v_c(r), v_esc(r)))
+    b9 = np.exp(-1*E_c(m_chi, v_c(r)) / T_chi) * (mu(m_chi) / nu(r, m_chi, T_chi))
+    c10 = alpha('+', r, m_chi, v_c(r), v_esc(r)) * alpha('-', r, m_chi, v_c(r), v_esc(r))
+    c11 = 1/(2*mu(m_chi))
+    c12 = mu_minus(mu(m_chi))**2 * (1/(mu(m_chi)) - 1/(nu(r, m_chi, T_chi)))
+    b13 = chi(alpha('-', r, m_chi, v_c(r), v_esc(r)), alpha('+', r, m_chi, v_c(r), v_esc(r)))
+    b14 = np.exp(-1 * E_e(m_chi, v_esc(r)) /T_chi) * np.exp(-1 * (E_e(m_chi, v_esc(r)) - E_c(m_chi, v_c(r)))/T_chi)
+    b15 = (mu_plus(mu(m_chi)))**2 /(nu(r, m_chi, T_chi) - mu(m_chi))
+    b16 = chi(beta('-', r, m_chi, v_c(r), v_esc(r)), beta('+', r, m_chi, v_c(r), v_esc(r)))
+    b17 = np.exp(-1 * (E_c(m_chi, v_c(r))/T_chi + alpha('-',  r, m_chi, v_c(r), v_esc(r))**2))
+    b18 = mu(m_chi)/(2* nu(r, m_chi, T_chi)) * alpha('+',  r, m_chi, v_c(r), v_esc(r))
+    b19 = np.exp(-1 * (E_c(m_chi, v_c(r))/T_chi + alpha('+',  r, m_chi, v_c(r), v_esc(r))**2))
+    b20 = mu(m_chi)/(2* nu(r, m_chi, T_chi)) * alpha('-',  r, m_chi, v_c(r), v_esc(r))
     return a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20)
 
 def Omegaplus37(r, w, T_chi, m_chi, sigma):
@@ -158,18 +183,36 @@ def alpha(pm, r, m_chi, w, v):
         val = (m_p/(2 * k_cgs* T(r)))**(1/2) * (mu_plus(mu(m_chi)) * v - mu_minus(mu(m_chi)) * w)
     return val
 
-def caleb_alpha(plus_minus, mx, q, z, xi, star, r):
-    # l = proton_speed(xi, star)
-    # r is an array here
-    l = (m_p/(2*k_cgs*T(xi*6.89*r[-1])))**(1/2)
-    if (plus_minus == '+'):
-        # alpha_val = (mu_plus_minus('+', mx)*q + mu_plus_minus('-', mx)*z)/l
-        alpha_val = (caleb_mu_plus_minus('+', mx*g_per_GeV)*q + caleb_mu_plus_minus('-', mx*g_per_GeV)*z)*l
-    elif(plus_minus == '-'):
-        # alpha_val = (mu_plus_minus('+', mx)*q - mu_plus_minus('-', mx)*z)/l
-        alpha_val = (caleb_mu_plus_minus('+', mx*g_per_GeV)*q - caleb_mu_plus_minus('-', mx*g_per_GeV)*z)*l
-    return alpha_val
+def gamma_2(pm, r, m_chi, T_chi, w, v):
+    '''made up goulde function'''
+    if (pm == '+'):
+        val = np.sqrt(m_p / (2*T(r))) * (grho(r, m_chi, T_chi)*v + xi_2(r, m_chi, T_chi)*w)
+    if (pm == '-'):
+        val = np.sqrt(m_p / (2*T(r))) * (grho(r, m_chi, T_chi)*v - xi_2(r, m_chi, T_chi)*w)
+    return val
 
+def grho(r, m_chi, T_chi):
+    '''made up goulde function'''
+    val =  (mu_plus(mu(m_chi)) * (mu_minus(mu(m_chi))))/ np.sqrt(xi_2(r, m_chi, T_chi))
+    return val
+
+def xi_2(r, m_chi, T_chi):
+    '''not the polytope xi!!!!!!, just a made up goulde function'''
+    val =  np.sqrt(mu_minus(mu(m_chi))**2 + nu(r, m_chi, T_chi))
+    return val
+
+def nu(r, m_chi, T_chi):
+    '''made up goulde function'''
+    val =  mu(m_chi) * T(r) / T_chi
+    return val
+
+def E_e(m_chi, v):
+    val =  m_chi * v**2 /2
+    return val
+
+def E_c(m_chi, w):
+    val =  m_chi * w**2 /2
+    return val
 
 def beta(pm, r, m_chi, w, v):
     '''made up goulde function'''
@@ -263,42 +306,14 @@ def normfactor(r, m_chi, T_chi):
     return t1 - t2*t3
 
 def evap_rate_integrand(r, T_chi, m_chi, sigma):
-    r311 =  R311(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
-    r39 =  R39(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
-    print("DIFF = ", r39-r311)
-    diff.append(r39-r311)
-    return r39
+    r311 =  R311_2(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
+    # r39 =  R39(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
+    # print("DIFF = ", r39-r311)
+    # diff.append(r39-r311)
+    return r311
 
 def evap_rate(T_chi, m_chi, sigma):
     return quad(evap_rate_integrand, 0, R_star_cgs, args=(T_chi, m_chi, sigma), limit=500)[0] * quad(n_chi, 0, R_star_cgs, args=(T_chi, m_chi), limit=500)[0]
-
-
-def caleb_beta(plus_minus, mx, q, z, xi, star, r):
-    # r is an array here
-    # l = proton_speed(xi, star)
-    l = (m_p/(2*T(xi*r[-1])))**(1/2)
-    if (plus_minus == '+'):
-        # beta_val = (mu_plus_minus('-', mx)*q + mu_plus_minus('+', mx)*z)/l
-        beta_val = (caleb_mu_plus_minus('-', mx*g_per_GeV)*q + caleb_mu_plus_minus('+', mx*g_per_GeV)*z)*l
-    elif(plus_minus == '-'):
-        # beta_val = (mu_plus_minus('-', mx)*q - mu_plus_minus('+', mx)*z)/l
-        beta_val = (caleb_mu_plus_minus('-', mx*g_per_GeV)*q - caleb_mu_plus_minus('+', mx*g_per_GeV)*z)*l
-    return beta_val
-
-def caleb_chi_func(a,b):
-    chi_val = np.sqrt(np.pi)/2 * (mp.erf(b) - mp.erf(a))
-    return chi_val
-
-def caleb_mu(mx):#take mx in GeV
-    mu_val = mx/0.93827
-    return mu_val
-
-def caleb_mu_plus_minus(plus_minus, mx):
-    if(plus_minus == '+'):
-        mu_plus_val = (caleb_mu(mx) + 1)/2
-    elif(plus_minus == '-'):
-        mu_plus_val = (caleb_mu(mx) - 1)/2
-    return mu_plus_val
 
 
 ########
@@ -417,116 +432,95 @@ def main():
         r = np.linspace(prof.radius_cm[-1], prof.radius_cm[0], 25)
         print(r)
 
-        # PLOT ARRAYS FOR CHIs
-        # ab_sample = np.linspace(5*10*7, 10**9, 100)
-        # chi_sample = []
-        # cchi_sample = []
-        # for i in range(len(ab_sample)):
-        #     for j in range(len(ab_sample)):
-        #         chi_sample.append(chi(ab_sample[i], ab_sample[j]))
-        #         chi_sample.append(caleb_chi(ab_sample[i], ab_sample[j]))
-        # plt.pcolormesh(chi_sample, ab_sample, ab_sample, cmap=palette)
-        # cbar = plt.colorbar()
-        # # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
-        # # cbar.set_ticks(list(np.linspace(9, 19, 11)))
-        # plt.title("Gould Chi Function: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
-        # # plt.legend()
-        # plt.xlabel('$a$')
+        # PLOT ARRAYS FOR MUs
+        # mup_sample = []
+        # mum_sample = []
+        # mu_sample = []
+        # cmup_sample = []
+        # cmum_sample = []
+        # cmu_sample = []
+        # for i in range(len(m_chi_sample_cgs)):
+        #     mu_sample.append(mu(m_chi_sample_cgs[i]))
+        #     mup_sample.append(mu_plus(mu(m_chi_sample_cgs[i])))
+        #     mum_sample.append(mu_minus(mu(m_chi_sample_cgs[i])))
+        #     cmu_sample.append(caleb_mu(m_chi_sample[i]))
+        #     cmup_sample.append(caleb_mu_plus_minus('+', m_chi_sample[i]))
+        #     cmum_sample.append(caleb_mu_plus_minus('-', m_chi_sample[i]))
+        # plt.plot(m_chi_sample, mu_sample, color=palette(.12), ls='--', linewidth=2, label="$\mu$ ian")
+        # plt.plot(m_chi_sample, mup_sample, color=palette(.31), ls='--', linewidth=2, label="$\mu_{+}$ ian")
+        # plt.plot(m_chi_sample, mum_sample, color=palette(.50), ls='--', linewidth=2, label="$\mu_{-}$ ian")
+        # plt.plot(m_chi_sample, cmu_sample, color=palette(.69), ls='-', linewidth=2, label="$\mu$ caleb")
+        # plt.plot(m_chi_sample, cmup_sample, color=palette(.86), ls='-', linewidth=2, label="$\mu_{+}$ caleb")
+        # plt.plot(m_chi_sample, cmum_sample, color=palette(.90), ls='-', linewidth=2, label="$\mu_{-}$ caleb")
+        # plt.title("cow goes $\mu$: 10^-43 cm^-2, 100 Msun")
+        # plt.legend()
+        # plt.xlabel('$m_{\chi}$ [GeV]')
         # # plt.ylim([0, 1.2*10**17])
-        # plt.ylabel("$b$")
-        # # plt.yscale("log")
-        # # plt.xscale("log")
+        # plt.ylabel("$\mu$")
+        # plt.yscale("log")
+        # plt.xscale("log")
         # plt.show()
         # plt.clf()
 
-        # PLOT ARRAYS FOR MUs
-        mup_sample = []
-        mum_sample = []
-        mu_sample = []
-        cmup_sample = []
-        cmum_sample = []
-        cmu_sample = []
-        for i in range(len(m_chi_sample_cgs)):
-            mu_sample.append(mu(m_chi_sample_cgs[i]))
-            mup_sample.append(mu_plus(mu(m_chi_sample_cgs[i])))
-            mum_sample.append(mu_minus(mu(m_chi_sample_cgs[i])))
-            cmu_sample.append(caleb_mu(m_chi_sample[i]))
-            cmup_sample.append(caleb_mu_plus_minus('+', m_chi_sample[i]))
-            cmum_sample.append(caleb_mu_plus_minus('-', m_chi_sample[i]))
-        plt.plot(m_chi_sample, mu_sample, color=palette(.12), ls='--', linewidth=2, label="$\mu$ ian")
-        plt.plot(m_chi_sample, mup_sample, color=palette(.31), ls='--', linewidth=2, label="$\mu_{+}$ ian")
-        plt.plot(m_chi_sample, mum_sample, color=palette(.50), ls='--', linewidth=2, label="$\mu_{-}$ ian")
-        plt.plot(m_chi_sample, cmu_sample, color=palette(.69), ls='-', linewidth=2, label="$\mu$ caleb")
-        plt.plot(m_chi_sample, cmup_sample, color=palette(.86), ls='-', linewidth=2, label="$\mu_{+}$ caleb")
-        plt.plot(m_chi_sample, cmum_sample, color=palette(.90), ls='-', linewidth=2, label="$\mu_{-}$ caleb")
-        plt.title("cow goes $\mu$: 10^-43 cm^-2, 100 Msun")
-        plt.legend()
-        plt.xlabel('$m_{\chi}$ [GeV]')
-        # plt.ylim([0, 1.2*10**17])
-        plt.ylabel("$\mu$")
-        plt.yscale("log")
-        plt.xscale("log")
-        plt.show()
-        plt.clf()
-
         # DEBUGING 
         # PLOT ARRAYS FOR CALEB_ALPHA
-        caleb_alpha_sample = np.zeros([len(r), len(m_chi_sample_cgs)])
-        for i in range(len(r)):
-            for j in range(len(m_chi_sample_cgs)):
-                print("Calculating alpha, i = ", i, "/", len(r), ", j = ", j, "/", len(m_chi_sample_cgs))
-                # caleb_alpha_sample[i,j] = caleb_alpha("+", m_chi_sample_cgs[j], 0.5*v_esc(r[i]), v_esc(r[i]), r[i]/(6.89*r[-1]), M100, r)
-        plt.pcolormesh(m_chi_sample_cgs, r, caleb_alpha_sample, cmap=palette)
-        cbar = plt.colorbar()
-        # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
-        # cbar.set_ticks(list(np.linspace(9, 19, 11)))
-        plt.title("Caleb's Gould Alpha Function: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
-        # plt.legend()
-        plt.xlabel('$r$ [cm]')
-        # plt.ylim([0, 1.2*10**17])
-        plt.ylabel("$m_{\chi}$ [g]")
-        # plt.yscale("log")
-        # plt.xscale("log")
-        # plt.show()
-        plt.clf()
+        # caleb_alpha_sample = np.zeros([len(r), len(m_chi_sample_cgs)])
+        # for i in range(len(r)):
+        #     for j in range(len(m_chi_sample_cgs)):
+        #         print("Calculating alpha, i = ", i, "/", len(r), ", j = ", j, "/", len(m_chi_sample_cgs))
+        #         # caleb_alpha_sample[i,j] = caleb_alpha("+", m_chi_sample_cgs[j], 0.5*v_esc(r[i]), v_esc(r[i]), r[i]/(6.89*r[-1]), M100, r)
+        # plt.pcolormesh(m_chi_sample_cgs, r, caleb_alpha_sample, cmap=palette)
+        # cbar = plt.colorbar()
+        # # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
+        # # cbar.set_ticks(list(np.linspace(9, 19, 11)))
+        # plt.title("Caleb's Gould Alpha Function: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
+        # # plt.legend()
+        # plt.xlabel('$r$ [cm]')
+        # # plt.ylim([0, 1.2*10**17])
+        # plt.ylabel("$m_{\chi}$ [g]")
+        # # plt.yscale("log")
+        # # plt.xscale("log")
+        # # plt.show()
+        # plt.clf()
 
-        # PLOT ARRAYS FOR ALPHA
-        alpha_sample = np.zeros([len(r), len(m_chi_sample_cgs)])
-        for i in range(len(r)):
-            for j in range(len(m_chi_sample_cgs)):
-                print("Calculating alpha, i = ", i, "/", len(r), ", j = ", j, "/", len(m_chi_sample_cgs))
-                # alpha_sample[i,j] = alpha("+", r[i], m_chi_sample_cgs[j], 0.5*v_esc(r[-1]), v_esc(r[i]))
-        plt.pcolormesh(m_chi_sample, r, alpha_sample, cmap=palette)
-        cbar = plt.colorbar()
-        # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
-        # cbar.set_ticks(list(np.linspace(9, 19, 11)))
-        plt.title("Gould Alpha Function: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
-        # plt.legend()
-        plt.ylabel('$r$ [cm]')
-        # plt.ylim([0, 1.2*10**17])
-        plt.xlabel("$m_{\chi}$ [GeV]")
-        # plt.yscale("log")
-        plt.xscale("log")
-        # plt.show()
-        plt.clf()
+        # # PLOT ARRAYS FOR ALPHA
+        # alpha_sample = np.zeros([len(r), len(m_chi_sample_cgs)])
+        # for i in range(len(r)):
+        #     for j in range(len(m_chi_sample_cgs)):
+        #         print("Calculating alpha, i = ", i, "/", len(r), ", j = ", j, "/", len(m_chi_sample_cgs))
+        #         # alpha_sample[i,j] = alpha("+", r[i], m_chi_sample_cgs[j], 0.5*v_esc(r[-1]), v_esc(r[i]))
+        # plt.pcolormesh(m_chi_sample, r, alpha_sample, cmap=palette)
+        # cbar = plt.colorbar()
+        # # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
+        # # cbar.set_ticks(list(np.linspace(9, 19, 11)))
+        # plt.title("Gould Alpha Function: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
+        # # plt.legend()
+        # plt.ylabel('$r$ [cm]')
+        # # plt.ylim([0, 1.2*10**17])
+        # plt.xlabel("$m_{\chi}$ [GeV]")
+        # # plt.yscale("log")
+        # plt.xscale("log")
+        # # plt.show()
+        # plt.clf()
 
         # PLOT ARRAYS FOR PHI
-        phi2_sample = []
-        phi_sample = []
-        for i in range(len(r)):
-            phi2_sample.append(phi2(r[i]))
-            phi_sample.append(phi(r[i]))
-        plt.plot(r, phi_sample, color=palette(.36), ls='--', linewidth=2, label="from acceleration")
-        plt.plot(r, phi2_sample, color=palette(.76), linewidth=2, label="from enclosed mass")
-        plt.title("Two Methods of PHI: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
-        plt.legend()
-        plt.xlabel('$r$ [cm]')
-        plt.ylim([0, 1.2*10**17])
-        plt.ylabel("$\phi$ [cgs]")
-        # plt.yscale("log")
-        # plt.xscale("log")
-        # plt.show()
-        plt.clf()
+        # phi2_sample = []
+        # phi_sample = []
+        # for i in range(len(r)):
+        #     # phi2_sample.append(phi2(r[i]))
+        #     # phi_sample.append(phi(r[i]))
+        #     print("phi")
+        # plt.plot(r, phi_sample, color=palette(.36), ls='--', linewidth=2, label="from acceleration")
+        # plt.plot(r, phi2_sample, color=palette(.76), linewidth=2, label="from enclosed mass")
+        # plt.title("Two Methods of PHI: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
+        # plt.legend()
+        # plt.xlabel('$r$ [cm]')
+        # plt.ylim([0, 1.2*10**17])
+        # plt.ylabel("$\phi$ [cgs]")
+        # # plt.yscale("log")
+        # # plt.xscale("log")
+        # # plt.show()
+        # plt.clf()
 
 
         if args.TchiMchi:
@@ -549,7 +543,7 @@ def main():
             # GENERATE ARRAYS FOR GOULD 3.11
             R311_sample = []
             for i in range(len(r)):
-                R311_sample.append(R311(r[i], Tchi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma))
+                R311_sample.append(R311_2(r[i], Tchi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma))
             plt.plot(r, R311_sample, color=palette(.44), linewidth=2, label=mesa_lab)
             plt.title("Gould 3.11: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
             plt.legend()
