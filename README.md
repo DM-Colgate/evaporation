@@ -7,7 +7,7 @@
 ### Usage:
 NOTE: Currently debuging and trying to get evaporation to work inside of `mesa_interpolator.py`, to run do:
 ```
-./mesa_interpolater.py -D Ilie4_ii -p 700 -T
+./mesa_interpolater.py -D Ilie4_ii -p 700 -e
 ```
 One I get reasonable evap I'll reorganize and get all the flags working again.
 
