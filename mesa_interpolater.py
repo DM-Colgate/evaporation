@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-# this script reads MESA radial profile data files
-# calculates DM temperature acording in Eq. 4.10 in SP85 (Spergel and Press, 1985)
-# then uses that DM temp and data from MESA to calculate DM evaporation rate
-
 ####################
 # IMPORT LIBRARIES #
 ####################
@@ -13,21 +9,19 @@ import numpy as np
 import mpmath as mp
 import math
 from decimal import Decimal as D
-
 import scipy.special as sc
 from scipy.integrate import quad
 from scipy.optimize import fsolve
 from scipy.interpolate import interpolate
 from scipy.interpolate import UnivariateSpline
-
 import matplotlib.pyplot as plt
 import matplotlib
-
+from mpl_toolkits.axes_grid1 import host_subplot
+import mpl_toolkits.axisartist as AA
 import time
 from IPython.display import clear_output
 import csv
 import copy
-
 
 ##################
 # DEFINE CLASSES #
@@ -163,12 +157,15 @@ def f_w38(r, w, T_chi, m_chi):
     return a1*a2*a3*a4*a5
 
 def R39_integrand(w, r, T_chi, m_chi, sigma):
+    '''integrand from Eq. 3.9'''
     return f_w38(r, w, T_chi, m_chi)*Omegaplus37(r, w, T_chi, m_chi, sigma)
 
 def R39(r, T_chi, m_chi, sigma):
+    '''Eq. 3.9 from Goulde 1987'''
     return quad(R39_integrand, 0, np.inf, args=(r, T_chi, m_chi, sigma), limit=500)[0]
 
 def v_chi(r, m_chi, T_chi):
+    '''DM velocity assuming an isothermal dist'''
     return np.sqrt(2*T_chi/m_chi)
 
 def n_chi(r, T_chi, m_chi):
@@ -235,7 +232,7 @@ def xi(r, m_chi, T_chi):
     return np.sqrt(mu_minus(mu(m_chi))**2 + T(r)/(T_chi*mu(m_chi)))
 
 def chi(a, b):
-    #TODO: is this right?
+    '''made up goulde function'''
     return np.sqrt(np.pi)/2 * (mp.erf(b) - mp.erf(a))
 
 def mu(m_chi):
@@ -249,46 +246,51 @@ def mu_minus(mu):
     return (mu - 1 )/ 2
 
 def v_c(r):
+    '''cutoff velocity for the boltzman distribution'''
     return v_esc(r)
 
 def v_esc(r):
-    return np.sqrt(2*(G_cgs * M_star_cgs * R_star_cgs + (phi(R_star_cgs) - phi(r))))
+    '''escape velocity at an arbitray point in the star'''
+    #TDOD: prove this
+    return np.sqrt(2*(G_cgs * M_star_cgs/R_star_cgs + (phi(R_star_cgs) - phi(r))))
 
 def T(r):
+    '''temperature interpolation function that is fit to a MESA data array'''
     return T_fit(r)
 
 def n_p(r):
-    ''' calculate proton number density using rho given by mesa'''
+    '''number density interpolation function that uses fits from a MESA data array'''
     return x_mass_fraction_H_fit(r) * rho_fit(r) / m_p
 
-#TODO: integrate over mass to calculate accelation without using the acc parameter from MESA
-#TODO: integrate 0->r
 def phi_integrand(r):
-    # TODO: should this be -1???
+    '''integrand for the phi() function'''
+    #TODO: integrate over mass to calculate acceleration without using the acc parameter from MESA
+    #TODO: integrate 0->r
     return grav_fit(r)
 
 def phi(r):
-    ''' calculate potential from accleration given by mesa'''
-    # print(quad(phi_integrand, 0, r, limit=500)[0])
-    # print(r)
+    ''' calculate potential from acceleration given by mesa'''
     return quad(phi_integrand, 0, r, limit=500)[0]
 
 def phi2_integrand(r):
-    # TODO: should this be -1???
+    '''integrand for the phi2() function'''
     return G_cgs*mass_enc(r)/(r**2)
 
 def phi2(r):
-    ''' calculate potential from accleration given by mesa'''
+    ''' calculate potential from acceleration at radius r given by mesa'''
     return quad(phi2_integrand, 0, r, limit=500)[0]
 
 def rho(r):
+    '''calculates the density at r from MESA using an interpolated fit from a data array'''
     return rho_fit(r)
 
 def mass_enc(r):
+    '''calculates the mass enclosed to r from MESA using an interpolated fit from a data array'''
     return mass_enc_fit(r)
     # return g_per_Msun*mass_enc_fit(r)
 
 def SP85_EQ410_integrand(r, T_chi, m_chi):
+    '''the integrand that SP85_EQ410() will evaluate'''
     t1 = n_p(r)
     t2 = math.sqrt(m_p* T_chi + m_chi * T(r)/(m_chi*m_p))
     t3 = (T(r) - T_chi)
@@ -296,16 +298,20 @@ def SP85_EQ410_integrand(r, T_chi, m_chi):
     return t1 * t2 * t3 * t4 * r**2
 
 def SP85_EQ410(T_chi, m_chi, R_star):
-    ''' uses MESA data in arrays, phi_mesa, n_mesa, prof.temperature, prof.radius_cm to evalute the integral in EQ. 4.10 from SP85'''
+    ''' uses MESA data in arrays, phi_mesa, n_mesa, prof.temperature, prof.radius_cm to evaluate the integral in EQ. 4.10 from SP85'''
     return quad(SP85_EQ410_integrand, 0, R_star, args=(T_chi, m_chi), limit=500)[0]
 
 def normfactor(r, m_chi, T_chi):
+    '''normalization factor'''
+    print("In the normfactor() function now")
     t1 = mp.erf(v_c(r)/v_chi(r, m_chi, T_chi))
     t2 = (2/np.pi)*(v_c(r)/v_chi(r, m_chi, T_chi))
     t3 = np.exp(-1*v_c(r)**2 /(v_chi(r, m_chi, T_chi)**2))
     return t1 - t2*t3
 
 def evap_rate_integrand(r, T_chi, m_chi, sigma):
+    '''the integrand that evap_rate() will evaluate'''
+    print("In the evap_rate_integrand() function now")
     r311 =  R311_2(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
     # r39 =  R39(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
     # print("DIFF = ", r39-r311)
@@ -313,30 +319,45 @@ def evap_rate_integrand(r, T_chi, m_chi, sigma):
     return r311
 
 def evap_rate(T_chi, m_chi, sigma):
+    '''evaporation rate of DM for the whole star'''
+    print("In the evap_rate() function now")
     return quad(evap_rate_integrand, 0, R_star_cgs, args=(T_chi, m_chi, sigma), limit=500)[0] * quad(n_chi, 0, R_star_cgs, args=(T_chi, m_chi), limit=500)[0]
 
+def read_in_T_chi(name):
+    '''reads T_chi vs M_chi data from CSV files'''
+    # read DM temp from csv
+    T_chi_csv = []
+    m_chi_csv = []
+    with open(name) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            T_chi_csv.append(float(row[1]))
+            m_chi_csv.append(float(row[0])*g_per_GeV)
 
-########
-# MAIN #
-########
-def main():
-    # parse commandline arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-D", "--direc", help="directory containing MESA profile and history files")
-    parser.add_argument("-p", "--profile", help="index of the profile to use", type=int)
-    parser.add_argument("-T", "--TchiMchi", help="plot DM temperature vs DM mass", action='store_true')
-    # parser.add_argument("-t", "--taumu", help="plot DM dimensionless temperature vs DM dimensionless mass", action='store_true')
-    # parser.add_argument("-V", "--phi", help="plot radial graviation potential from MESA data files", action='store_true')
-    # parser.add_argument("-v", "--phipoly", help="plot radial graviation potential for N=3 polytrope", action='store_true')
-    # parser.add_argument("-n", "--np", help="plot proton number denisty from MESA data files", action='store_true')
-    # parser.add_argument("-e", "--evap", help="plot DM evap rate from MESA data files", action='store_true')
+    # now fit interpolation functions to T_chi w.r.t m_chi
+    T_chi_fit = interp(m_chi_csv, T_chi_csv)
+    return (m_chi_csv, T_chi_csv, T_chi_fit)
 
-    # arguments
-    args = parser.parse_args()
+def solve_T_chi(m_chi_sample):
+    m_chi_sample_cgs = []
+    for i in range(len(m_chi_sample)):
+        m_chi_sample_cgs.append(g_per_GeV * m_chi_sample[i])
 
-    # main variables
+    # use central temp to guess DM temp
+    T_chi_guess = prof.temperature[-1]
+    T_chi_sample = []
+
+    # do MESA calcs and run thru all massses
+    for i in range(len(m_chi_sample)):
+        print("Solving Tchi for m_chi =", m_chi_sample[i], "GeV...")
+        m_chi = m_chi_sample_cgs[i]
+        R_star = R_star_cgs
+        T_chi_sample.append(fsolve(SP85_EQ410, T_chi_guess, args=(m_chi, R_star))[0])
+    return T_chi_sample
+
+def assign_const():
+    '''sets up physical constants as global parameters'''
     global m_p
-    # m_p = 0.9382720813 #GeV
     m_p = 1.6726231 * 10 ** (-24) # grams
     global g_per_GeV
     g_per_GeV = 1.783 *10 ** (-24)
@@ -346,219 +367,167 @@ def main():
     k_cgs = 1.3807 * 10 ** (-16) # cm2 g s-2 K-1
     global g_per_Msun
     g_per_Msun = 1.988*10**33
-    m_p_cgs = 1.6726231 * 10 ** (-24) # grams
-    cm_per_Rsun = 1.436 * 10**(-11)
+    global cm_per_Rsun
+    cm_per_Rsun = 6.957*10**10 # cm
+
+def mesa_args(direc, profile):
+    '''read in what mesa data file to use'''
+    arg1 = direc
+    arg = arg1.split('_')
+    hist= "history_" + arg[0] + ".data"
+    direc = mr.MesaLogDir(log_path=arg1, history_file=hist)
+    prof = direc.profile_data(int(profile))
+
+    # read info about the MESA star
+    mass = str(round(prof.star_mass, 3))
+    year = str(round(prof.star_age, 3))
+    model = str(round(prof.model_number, 3))
+    mesa_lab = year + " yr, " + mass + " $M_{\\odot}$, " + model
+    return (prof, mesa_lab)
+
+def mesa_interp(prof):
+    '''MESA interpolations we will need, sets them as globals'''
+    global rho_fit
+    rho_fit = interp(prof.radius_cm, prof.rho)
+    global T_fit
+    T_fit = interp(prof.radius_cm, prof.temperature)
+    global grav_fit
+    grav_fit = interp(prof.radius_cm, prof.grav)
+    global x_mass_fraction_H_fit
+    x_mass_fraction_H_fit = interp(prof.radius_cm, prof.x_mass_fraction_H)
+    global mass_enc_fit
+    mass_enc_fit = interp(prof.radius_cm, prof.mass_grams)
+    global M_star_cgs
+    M_star_cgs = prof.star_mass * g_per_Msun
+    global R_star_cgs
+    R_star_cgs = prof.photosphere_r * cm_per_Rsun
+
+########
+# MAIN #
+########
+def main():
+    # parse commandline arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-D", "--direc", help="directory containing MESA profile and history files")
+    parser.add_argument("-p", "--profile", help="index of the profile to use", type=int)
+    parser.add_argument("-T", "--TchiMchi", help="solve for and plot DM temperature vs DM mass", action='store_true')
+    parser.add_argument("-M", "--MESA", help="plot stellar parameters from MESA", action='store_true')
+    parser.add_argument("-e", "--evap", help="plot DM evap rate from MESA data files", action='store_true')
+    args = parser.parse_args()
+
+    # DM nucleon cross section
     sigma = 1*10**(-43)
 
-    global diff
-    diff = []
+    # assign various physical constants as global variables
+    assign_const()
 
-    # ploting stuff
+    # set up some ploting stuff
     fig = plt.figure(figsize = (12,8))
     plt.style.use('fast')
     palette = plt.get_cmap('viridis')
     palette.set_over('white')
     palette.set_under('white')
 
-    # polytrope def
+    # polytrope definition
     M100 = PopIIIStar(100, 10**0.6147, 10**6.1470, 1.176e8, 32.3, 10**6)
 
-    # read in MESA data from files specified in command line arguments
     if args.direc and args.profile:
-        arg1 = args.direc
-        arg = arg1.split('_')
-        hist= "history_" + arg[0] + ".data"
-        direc = mr.MesaLogDir(log_path=arg1, history_file=hist)
-        prof = direc.profile_data(int(args.profile))
+        # read in MESA data from files specified in command line arguments
+        (prof, mesa_lab) = mesa_args(args.direc, args.profile)
 
-        # read info about the MESA star
-        mass = str(round(prof.star_mass, 3))
-        year = str(round(prof.star_age, 3))
-        model = str(round(prof.model_number, 3))
-        mesa_lab = year + " yr, " + mass + " $M_{\\odot}$, " + model
+        # create interpolation functions from MESA's arrays 
+        mesa_interp(prof)
 
-        # MESA interpolations we will need
-        global rho_fit
-        rho_fit = interp(prof.radius_cm, prof.rho)
-        global T_fit
-        T_fit = interp(prof.radius_cm, prof.temperature)
-        global grav_fit
-        grav_fit = interp(prof.radius_cm, prof.grav)
-        global x_mass_fraction_H_fit
-        x_mass_fraction_H_fit = interp(prof.radius_cm, prof.x_mass_fraction_H)
-        global mass_enc_fit
-        mass_enc_fit = interp(prof.radius_cm, prof.mass_grams)
-        global M_star_cgs
-        M_star_cgs = prof.star_mass * g_per_Msun
-        global R_star_cgs
-        R_star_cgs = prof.photosphere_r * cm_per_Rsun
-
-        # calculate DM temp subroutine
         if args.TchiMchi:
-            m_chi_sample = [0.00001, 0.000015, 0.00002, 0.00003, 0.00005, 0.00007, 0.0001, 0.00015, 0.0002, 0.0003, 0.0005, 0.0007, 0.001, 0.0015, 0.002, 0.003, 0.005, 0.007, 0.01, 0.015, 0.02, 0.03, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3, 0.5, 0.7, 1, 1.5, 2, 3, 5, 7, 10, 15, 20, 30, 50, 70, 100, 150, 200, 300, 500, 700, 1000, 1500, 2000, 3000, 5000, 7000, 10000, 15000]
+            # use fsolve and SP85 to find the DM temperature
+            solve_T_chi(m_chi_sample)
+        else:
+            # read in DM temperature vs DM mass from CSV file 
+            (m_chi_csv, T_chi_csv, T_chi_fit) = read_in_T_chi('TM4.csv')
 
-            # create an array of DM masses to test in grams
-            m_chi_sample_cgs = []
-            for i in range(len(m_chi_sample)):
-                m_chi_sample_cgs.append(g_per_GeV * m_chi_sample[i])
+        # ASSIGN ARRAYS FOR PLOTTING AND SAMPLING 
+        # DM mass in GeV
+        m_chi_sample = np.logspace(-6, 5, 50)
 
-            # use central temp to guess DM temp
-            T_chi_guess = prof.temperature[-1]
-            T_chi_sample = []
+        # DM mass in grams
+        m_chi_sample_cgs = []
+        for i in range(len(m_chi_sample)):
+            m_chi_sample_cgs.append(g_per_GeV * m_chi_sample[i])
 
-            # do MESA calcs and run thru all massses
-            for i in range(len(m_chi_sample)):
-                print("Solving Tchi for m_chi =", m_chi_sample[i], "GeV...")
-                # use grams
-                m_chi = m_chi_sample_cgs[i]
-                R_star = R_star_cgs
-                T_chi_sample.append(fsolve(SP85_EQ410, T_chi_guess, args=(m_chi, R_star))[0])
-
-            # read DM temp from csv
-            T_chi_csv = []
-            m_chi_csv = []
-            with open('TM4.csv') as csv_file:
-                csv_reader = csv.reader(csv_file, delimiter=',')
-                for row in csv_reader:
-                    T_chi_csv.append(float(row[1]))
-                    m_chi_csv.append(float(row[0])*g_per_GeV)
-
-            # now fit interpolation functions to T_chi w.r.t m_chi
-            Tchi_fit = interp(m_chi_csv, T_chi_csv)
-
-
-        # BACK TO MAIN
-        # make a linear array based on the radius of the star in cm
+        # radius in cm
         r = np.linspace(prof.radius_cm[-1], prof.radius_cm[0], 25)
-        print(r)
 
-        # PLOT ARRAYS FOR MUs
-        # mup_sample = []
-        # mum_sample = []
-        # mu_sample = []
-        # cmup_sample = []
-        # cmum_sample = []
-        # cmu_sample = []
-        # for i in range(len(m_chi_sample_cgs)):
-        #     mu_sample.append(mu(m_chi_sample_cgs[i]))
-        #     mup_sample.append(mu_plus(mu(m_chi_sample_cgs[i])))
-        #     mum_sample.append(mu_minus(mu(m_chi_sample_cgs[i])))
-        #     cmu_sample.append(caleb_mu(m_chi_sample[i]))
-        #     cmup_sample.append(caleb_mu_plus_minus('+', m_chi_sample[i]))
-        #     cmum_sample.append(caleb_mu_plus_minus('-', m_chi_sample[i]))
-        # plt.plot(m_chi_sample, mu_sample, color=palette(.12), ls='--', linewidth=2, label="$\mu$ ian")
-        # plt.plot(m_chi_sample, mup_sample, color=palette(.31), ls='--', linewidth=2, label="$\mu_{+}$ ian")
-        # plt.plot(m_chi_sample, mum_sample, color=palette(.50), ls='--', linewidth=2, label="$\mu_{-}$ ian")
-        # plt.plot(m_chi_sample, cmu_sample, color=palette(.69), ls='-', linewidth=2, label="$\mu$ caleb")
-        # plt.plot(m_chi_sample, cmup_sample, color=palette(.86), ls='-', linewidth=2, label="$\mu_{+}$ caleb")
-        # plt.plot(m_chi_sample, cmum_sample, color=palette(.90), ls='-', linewidth=2, label="$\mu_{-}$ caleb")
-        # plt.title("cow goes $\mu$: 10^-43 cm^-2, 100 Msun")
-        # plt.legend()
-        # plt.xlabel('$m_{\chi}$ [GeV]')
-        # # plt.ylim([0, 1.2*10**17])
-        # plt.ylabel("$\mu$")
-        # plt.yscale("log")
-        # plt.xscale("log")
-        # plt.show()
-        # plt.clf()
-
-        # DEBUGING 
-        # PLOT ARRAYS FOR CALEB_ALPHA
-        # caleb_alpha_sample = np.zeros([len(r), len(m_chi_sample_cgs)])
-        # for i in range(len(r)):
-        #     for j in range(len(m_chi_sample_cgs)):
-        #         print("Calculating alpha, i = ", i, "/", len(r), ", j = ", j, "/", len(m_chi_sample_cgs))
-        #         # caleb_alpha_sample[i,j] = caleb_alpha("+", m_chi_sample_cgs[j], 0.5*v_esc(r[i]), v_esc(r[i]), r[i]/(6.89*r[-1]), M100, r)
-        # plt.pcolormesh(m_chi_sample_cgs, r, caleb_alpha_sample, cmap=palette)
-        # cbar = plt.colorbar()
-        # # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
-        # # cbar.set_ticks(list(np.linspace(9, 19, 11)))
-        # plt.title("Caleb's Gould Alpha Function: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
-        # # plt.legend()
-        # plt.xlabel('$r$ [cm]')
-        # # plt.ylim([0, 1.2*10**17])
-        # plt.ylabel("$m_{\chi}$ [g]")
-        # # plt.yscale("log")
-        # # plt.xscale("log")
-        # # plt.show()
-        # plt.clf()
-
-        # # PLOT ARRAYS FOR ALPHA
-        # alpha_sample = np.zeros([len(r), len(m_chi_sample_cgs)])
-        # for i in range(len(r)):
-        #     for j in range(len(m_chi_sample_cgs)):
-        #         print("Calculating alpha, i = ", i, "/", len(r), ", j = ", j, "/", len(m_chi_sample_cgs))
-        #         # alpha_sample[i,j] = alpha("+", r[i], m_chi_sample_cgs[j], 0.5*v_esc(r[-1]), v_esc(r[i]))
-        # plt.pcolormesh(m_chi_sample, r, alpha_sample, cmap=palette)
-        # cbar = plt.colorbar()
-        # # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
-        # # cbar.set_ticks(list(np.linspace(9, 19, 11)))
-        # plt.title("Gould Alpha Function: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
-        # # plt.legend()
-        # plt.ylabel('$r$ [cm]')
-        # # plt.ylim([0, 1.2*10**17])
-        # plt.xlabel("$m_{\chi}$ [GeV]")
-        # # plt.yscale("log")
-        # plt.xscale("log")
-        # # plt.show()
-        # plt.clf()
-
-        # PLOT ARRAYS FOR PHI
-        # phi2_sample = []
-        # phi_sample = []
-        # for i in range(len(r)):
-        #     # phi2_sample.append(phi2(r[i]))
-        #     # phi_sample.append(phi(r[i]))
-        #     print("phi")
-        # plt.plot(r, phi_sample, color=palette(.36), ls='--', linewidth=2, label="from acceleration")
-        # plt.plot(r, phi2_sample, color=palette(.76), linewidth=2, label="from enclosed mass")
-        # plt.title("Two Methods of PHI: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
-        # plt.legend()
-        # plt.xlabel('$r$ [cm]')
-        # plt.ylim([0, 1.2*10**17])
-        # plt.ylabel("$\phi$ [cgs]")
-        # # plt.yscale("log")
-        # # plt.xscale("log")
-        # # plt.show()
-        # plt.clf()
-
-
-        if args.TchiMchi:
-            # GENERATE AND PLOT ARRAYS FOR GOULD 3.11
-            n_chi_sample = []
+        if args.MESA:
+            T_sample = []
+            rho_sample = []
+            phi_sample = []
+            n_p_sample = []
+            v_esc_sample = []
             for i in range(len(r)):
-                n_chi_sample.append(n_chi(r[i], T_chi_csv[12], m_chi_csv[12]))
-            plt.plot(r, n_chi_sample, color=palette(.44))
-            plt.title("DM number density: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
-            plt.legend()
-            plt.xlabel('$r$ [cm]')
-            plt.ylabel('$$n_{\chi}$$')
-            # plt.yscale("log")
-            # plt.xscale("log")
-            # plt.show()
-            plt.clf()
+                T_sample.append(T(r[i]))
+                rho_sample.append(rho(r[i]))
+                phi_sample.append(phi(r[i]))
+                n_p_sample.append(n_p(r[i]))
+                v_esc_sample.append(v_esc(r[i]))
 
+            # draw the multiplot
+            host = host_subplot(111, axes_class=AA.Axes)
+            plt.subplots_adjust(right=0.75)
+            par1 = host.twinx()
+            par2 = host.twinx()
+            par3 = host.twinx()
+            par4 = host.twinx()
+            offset = 50
+            fixed_axis_2 = par2.get_grid_helper().new_fixed_axis
+            fixed_axis_3 = par3.get_grid_helper().new_fixed_axis
+            fixed_axis_4 = par4.get_grid_helper().new_fixed_axis
 
-        if args.TchiMchi:
-            # GENERATE ARRAYS FOR GOULD 3.11
-            R311_sample = []
-            for i in range(len(r)):
-                R311_sample.append(R311_2(r[i], Tchi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma))
-            plt.plot(r, R311_sample, color=palette(.44), linewidth=2, label=mesa_lab)
-            plt.title("Gould 3.11: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
-            plt.legend()
-            plt.xlabel('$r$ [cm]')
-            plt.ylabel('$R(w|v)$')
-            # plt.yscale("log")
-            # plt.xscale("log")
+            par2.axis["right"] = fixed_axis_2(loc="right", axes=par2,offset=(offset, 0))
+            par2.axis["right"].toggle(all=True)
+            par3.axis["right"] = fixed_axis_3(loc="right", axes=par3,offset=(offset*2, 0))
+            par3.axis["right"].toggle(all=True)
+            par4.axis["right"] = fixed_axis_4(loc="right", axes=par4,offset=(offset*3, 0))
+            par4.axis["right"].toggle(all=True)
+
+            # host.set_xlim(0, 2)
+            # host.set_ylim(0, 2)
+            host.set_xlabel("Radius [cm]")
+            host.set_ylabel("Density")
+
+            par1.set_ylabel("Temperature [K]")
+            par2.set_ylabel("Escape Velocity")
+            par3.set_ylabel("H Number Density")
+            par4.set_ylabel("Gravitational Potential")
+
+            p1, = host.plot(r, rho_sample, label="Density")
+            p2, = par1.plot(r, T_sample, label="Temperature")
+            p3, = par2.plot(r, v_esc_sample, label="Escape Velocity")
+            p4, = par3.plot(r, n_p_sample, label="H Number Density")
+            p5, = par4.plot(r, phi_sample, label="Gravitational Potential")
+
+            # par1.set_ylim(0, 4)
+            # par2.set_ylim(1, 65)
+            host.tick_params(axis='y', colors=p1.get_color())
+            par1.tick_params(axis='y', colors=p2.get_color())
+            par2.tick_params(axis='y', colors=p3.get_color())
+            par3.tick_params(axis='y', colors=p4.get_color())
+            par4.tick_params(axis='y', colors=p5.get_color())
+
+            host.legend()
+            host.axis["left"].label.set_color(p1.get_color())
+            par1.axis["right"].label.set_color(p2.get_color())
+            par2.axis["right"].label.set_color(p3.get_color())
+            par3.axis["right"].label.set_color(p4.get_color())
+            par4.axis["right"].label.set_color(p5.get_color())
+            plt.draw()
             plt.show()
-            plt.clf()
 
 
-        if args.TchiMchi:
+        if args.evap:
             # NOW CALC EVAP RATES
             evap_sample = []
             for i in range(len(m_chi_csv)):
+                print("####################################################")
                 print("Getting evap rate for m_chi =", m_chi_csv[i], "g...")
                 evap_sample.append(evap_rate(T_chi_csv[i], m_chi_csv[i], sigma))
 
@@ -575,6 +544,7 @@ def main():
             plt.ylabel('$E$ [$s^{-1}$]')
             plt.yscale("log")
             plt.xscale("log")
+            plt.savefig("NEW_evap4.pdf")
             plt.show()
             plt.clf()
 
