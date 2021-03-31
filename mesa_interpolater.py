@@ -256,10 +256,12 @@ def v_esc(r):
 
 def T(r):
     '''temperature interpolation function that is fit to a MESA data array'''
+    # TODO: swap with polytrope
     return T_fit(r)
 
 def n_p(r):
     '''number density interpolation function that uses fits from a MESA data array'''
+    # TODO: swap with polytrope
     return x_mass_fraction_H_fit(r) * rho_fit(r) / m_p
 
 def phi_integrand(r):
@@ -270,6 +272,7 @@ def phi_integrand(r):
 
 def phi(r):
     ''' calculate potential from acceleration given by mesa'''
+    # TODO: swap with polytrope
     return quad(phi_integrand, 0, r, limit=500)[0]
 
 def phi2_integrand(r):
@@ -282,6 +285,7 @@ def phi2(r):
 
 def rho(r):
     '''calculates the density at r from MESA using an interpolated fit from a data array'''
+    # TODO: swap with polytrope
     return rho_fit(r)
 
 def mass_enc(r):
