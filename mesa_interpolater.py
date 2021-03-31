@@ -255,9 +255,11 @@ def v_esc(r):
     return np.sqrt(2*(G_cgs * M_star_cgs * R_star_cgs + (phi(R_star_cgs) - phi(r))))
 
 def T(r):
+    # TODO: swap with poltrope
     return T_fit(r)
 
 def n_p(r):
+    # TODO: swap with poltrope
     ''' calculate proton number density using rho given by mesa'''
     return x_mass_fraction_H_fit(r) * rho_fit(r) / m_p
 
@@ -269,6 +271,7 @@ def phi_integrand(r):
 
 def phi(r):
     ''' calculate potential from accleration given by mesa'''
+    # TODO: swap with poltrope
     # print(quad(phi_integrand, 0, r, limit=500)[0])
     # print(r)
     return quad(phi_integrand, 0, r, limit=500)[0]
@@ -282,6 +285,7 @@ def phi2(r):
     return quad(phi2_integrand, 0, r, limit=500)[0]
 
 def rho(r):
+    # TODO: swap with poltrope
     return rho_fit(r)
 
 def mass_enc(r):
