@@ -162,7 +162,7 @@ def R39_integrand(w, r, T_chi, m_chi, sigma):
 
 def R39(r, T_chi, m_chi, sigma):
     '''Eq. 3.9 from Goulde 1987'''
-    return quad(R39_integrand, 0, np.inf, args=(r, T_chi, m_chi, sigma), limit=500)[0]
+    return quad(R39_integrand, 0, np.inf, args=(r, T_chi, m_chi, sigma))[0]
 
 def v_chi(r, m_chi, T_chi):
     '''DM velocity assuming an isothermal dist'''
@@ -170,7 +170,7 @@ def v_chi(r, m_chi, T_chi):
 
 def n_chi(r, T_chi, m_chi):
     '''normalized isotropic DM distribution using user supplied potential and DM temp (from MESA)'''
-    return np.exp(-1.0*m_chi*phi(r)/(k_cgs*T_chi))
+    return np.exp(-1.0*m_chi*phi_quick(r)/(k_cgs*T_chi))
 
 def alpha(pm, r, m_chi, w, v):
     '''made up goulde function'''
@@ -252,7 +252,7 @@ def v_c(r):
 def v_esc(r):
     '''escape velocity at an arbitray point in the star'''
     #TDOD: prove this
-    return np.sqrt(2*(G_cgs * M_star_cgs/R_star_cgs + (phi(R_star_cgs) - phi(r))))
+    return np.sqrt(2*(G_cgs * M_star_cgs/R_star_cgs + (phi_quick(R_star_cgs) - phi_quick(r))))
 
 def T(r):
     '''temperature interpolation function that is fit to a MESA data array'''
@@ -273,7 +273,7 @@ def phi_integrand(r):
 def phi(r):
     ''' calculate potential from acceleration given by mesa'''
     # TODO: swap with polytrope
-    return quad(phi_integrand, 0, r, limit=500)[0]
+    return quad(phi_integrand, 0, r)[0]
 
 def phi2_integrand(r):
     '''integrand for the phi2() function'''
@@ -281,7 +281,11 @@ def phi2_integrand(r):
 
 def phi2(r):
     ''' calculate potential from acceleration at radius r given by mesa'''
-    return quad(phi2_integrand, 0, r, limit=500)[0]
+    return quad(phi2_integrand, 0, r)[0]
+
+def phi_quick(r):
+    '''uses an interpolation for the gravitational potential which is faster than taking the integrals everytime'''
+    return phi_fit(r)
 
 def rho(r):
     '''calculates the density at r from MESA using an interpolated fit from a data array'''
@@ -298,7 +302,7 @@ def SP85_EQ410_integrand(r, T_chi, m_chi):
     t1 = n_p(r)
     t2 = math.sqrt(m_p* T_chi + m_chi * T(r)/(m_chi*m_p))
     t3 = (T(r) - T_chi)
-    t4 = math.exp((-1*m_chi*phi(r))/(k_cgs*T_chi))
+    t4 = math.exp((-1*m_chi*phi_quick(r))/(k_cgs*T_chi))
     return t1 * t2 * t3 * t4 * r**2
 
 def SP85_EQ410(T_chi, m_chi, R_star):
@@ -325,7 +329,7 @@ def evap_rate_integrand(r, T_chi, m_chi, sigma):
 def evap_rate(T_chi, m_chi, sigma):
     '''evaporation rate of DM for the whole star'''
     print("In the evap_rate() function now")
-    return quad(evap_rate_integrand, 0, R_star_cgs, args=(T_chi, m_chi, sigma), limit=500)[0] * quad(n_chi, 0, R_star_cgs, args=(T_chi, m_chi), limit=500)[0]
+    return quad(evap_rate_integrand, 0, R_star_cgs, args=(T_chi, m_chi, sigma))[0] * quad(n_chi, 0, R_star_cgs, args=(T_chi, m_chi))[0]
 
 def read_in_T_chi(name):
     '''reads T_chi vs M_chi data from CSV files'''
@@ -429,17 +433,18 @@ def phi_poly(r, star):
     '''polytropic potential'''
     xi = 6.89*(r / star.get_radius_cm())
     G = 6.6743*10**(-8) # gravitational constant in cgs units
-    phi_xi = 4*np.pi*G*(polytrope3_rhoc(star))*(star.get_radius_cm()/xis[-1])**2 * (1 - theta(xi)) #cgs units
+    phi_xi = 4*np.pi*G*(rho_c_poly(star))*(star.get_radius_cm()/xis[-1])**2 * (1 - theta(xi)) #cgs units
     return phi_xi
 
-def eta_poly(r):
+def eta_poly(r, star):
     '''dimensionless number density of proton distribution in n = 3 polytrope'''
     xi = 6.89*(r / star.get_radius_cm())
     eta_xi = theta_cube(xi)
     return eta_xi
 
-def n_p_poly(eta):
-    '''takes eta of a N=3 polytrope, and then coverts to number density'''
+def n_p_poly(r, star):
+    '''takes eta of  a N=3 polytrope, and then coverts to number density'''
+    n_p = rho_c_poly(star) * eta_poly(r, star)
     return n_p
 
 def n_chi_poly(mx, xi, star): #Normalized
@@ -453,7 +458,6 @@ def n_chi_poly(mx, xi, star): #Normalized
     nx_xi_val = np.exp(-mx_g*potential_poly(xi, star)/(kb*Tx)) 
     return nx_xi_val
 
-# 'Lane_Emden.csv'
 def read_in_poly(name):
     '''retrieves solution to laneEmden n=3'''
     xis = []
@@ -468,9 +472,18 @@ def read_in_poly(name):
     theta = UnivariateSpline(xis, theta_arr, k = 5, s = 0)
     return (xis, theta, theta_cube)
 
-def T_poly():
+def T_poly(r, star):
     '''temperature from polytrope'''
-    #TODO: how to get temperature from N=3 model? 
+    xi = 6.89*(r / star.get_radius_cm())
+    return T(0) * theta(xi)
+
+def v_esc_poly(r, star):
+    '''Escape velocity of n=3 polytrope at given radius (dimensionless xi)'''
+    G = 6.6743*10**(-8) # gravitational constant in cgs units
+    xi = 6.89*(r / star.get_radius_cm())
+    r1 = star.get_radius_cm()
+    vesc = np.sqrt( 2*G*star.get_mass_grams()/star.get_radius_cm() + 2*(phi_poly(r1, star) - phi_poly(r, star)) )
+    return vesc
 
 ########
 # MAIN #
@@ -482,6 +495,7 @@ def main():
     parser.add_argument("-p", "--profile", help="index of the profile to use", type=int)
     parser.add_argument("-T", "--TchiMchi", help="solve for and plot DM temperature vs DM mass", action='store_true')
     parser.add_argument("-M", "--MESA", help="plot stellar parameters from MESA", action='store_true')
+    parser.add_argument("-P", "--poly", help="plot stellar parameters for N=3 polytope", action='store_true')
     parser.add_argument("-e", "--evap", help="plot DM evap rate from MESA data files", action='store_true')
     args = parser.parse_args()
 
@@ -495,13 +509,21 @@ def main():
     fig = plt.figure(figsize = (12,8))
     plt.style.use('fast')
     palette = plt.get_cmap('magma')
+    palette1 = plt.get_cmap('viridis')
     palette.set_over('white')
     palette.set_under('white')
 
-    # polytrope definition
-    M100 = PopIIIStar(100, 10**0.6147, 10**6.1470, 1.176e8, 32.3, 10**6)
-    M300 = PopIIIStar(300, 10**0.8697, 10**6.8172, 1.245e8, 18.8, 10**6)
-    M1000 = PopIIIStar(1000, 10**1.1090, 10**7.3047, 1.307e8, 10.49, 10**6)
+    if args.poly:
+        # polytrope definitions
+        M100 = PopIIIStar(100, 10**0.6147, 10**6.1470, 1.176e8, 32.3, 10**6)
+        M300 = PopIIIStar(300, 10**0.8697, 10**6.8172, 1.245e8, 18.8, 10**6)
+        M1000 = PopIIIStar(1000, 10**1.1090, 10**7.3047, 1.307e8, 10.49, 10**6)
+
+        # read in numerical solution to lane-ememda eqaution from CSV file
+        global xis
+        global theta
+        global theta_cube
+        (xis, theta, theta_cube) = read_in_poly('Lane_Emden.csv')
 
     if args.direc and args.profile:
         # read in MESA data from files specified in command line arguments
@@ -527,7 +549,21 @@ def main():
             m_chi_sample_cgs.append(g_per_GeV * m_chi_sample[i])
 
         # radius in cm
-        r = np.linspace(prof.radius_cm[-1], prof.radius_cm[0], 25)
+        r = np.linspace(prof.radius_cm[-1], prof.radius_cm[0], 100)
+        r_poly = np.linspace(prof.radius_cm[-1], M100.get_radius_cm(), 100)
+
+        # debugging
+        # v_esc_poly_sample = []
+        # for i in range(len(r_poly)):
+        #     v_esc_poly_sample.append(v_esc_poly(r_poly[i], M100))
+        # print(v_esc_poly_sample)
+
+        # set up an interpolation for phi that's faster than the integration
+        global phi_fit
+        phi_range = []
+        for i in range(len(r)):
+            phi_range.append(phi(r[i]))
+        phi_fit = interp(r, phi_range)
 
         if args.MESA:
             T_sample = []
@@ -541,6 +577,25 @@ def main():
                 phi_sample.append(phi(r[i]))
                 n_p_sample.append(n_p(r[i]))
                 v_esc_sample.append(v_esc(r[i]))
+
+            if args.poly:
+                T_poly_sample = []
+                rho_poly_sample = []
+                phi_poly_sample = []
+                n_p_poly_sample = []
+                v_esc_poly_sample = []
+                for i in range(len(r_poly)):
+                    T_poly_sample.append(T_poly(r_poly[i], M100))
+                    rho_poly_sample.append(rho_poly(r_poly[i], M100))
+                    phi_poly_sample.append(phi_poly(r_poly[i], M100))
+                    n_p_poly_sample.append(n_p_poly(r_poly[i], M100))
+                    v_esc_poly_sample.append(v_esc_poly(r_poly[i], M100))
+
+            # print(T_poly_sample)
+            # print(rho_poly_sample)
+            # print(phi_poly_sample)
+            # print(n_p_poly_sample)
+            # print(v_esc_poly_sample)
 
             # draw the multiplot
             host = host_subplot(111, axes_class=AA.Axes)
@@ -570,14 +625,15 @@ def main():
             par2.set_ylabel("Escape Velocity")
             par3.set_ylabel("Gravitational Potential")
 
-            p1, = host.plot(r, rho_sample, label="Density", color=palette(1/10), linewidth=2)
+            p1, = host.plot(r, rho_sample, label="Density", color=palette1(5/10), linewidth=2)
             p2, = par1.plot(r, T_sample, label="Temperature", color=palette(3/10), linewidth=2)
             p3, = par2.plot(r, v_esc_sample, label="Escape Velocity", color=palette(6/10), linewidth=2)
-            p4, = par3.plot(r, phi_sample, label="Gravitational Potential", color=palette(8/10), linewidth=2)
-            # b1, = host.plot(r, rho_sample, label="Density", color=palette(1/10), linewidth=2)
-            # b2, = par1.plot(r, T_sample, label="Temperature", color=palette(3/10), linewidth=2)
-            # b3, = par2.plot(r, v_esc_sample, label="Escape Velocity", color=palette(6/10), linewidth=2)
-            # b4, = par3.plot(r, phi_sample, label="Gravitational Potential", color=palette(8/10), linewidth=2)
+            p4, = par3.plot(r, phi_sample, label="Gravitational Potential", color=palette(8.6/10), linewidth=2)
+
+            b1, = host.plot(r_poly, rho_poly_sample, label="N=3", color=palette1(5/10), linewidth=2, ls='--')
+            b2, = par1.plot(r_poly, T_poly_sample, label="N=3", color=palette(3/10), linewidth=2, ls='--')
+            b3, = par2.plot(r_poly, v_esc_poly_sample, label="N=3", color=palette(6/10), linewidth=2, ls='--')
+            b4, = par3.plot(r_poly, phi_poly_sample, label="N=3", color=palette(8.6/10), linewidth=2, ls='--')
 
             # par1.set_ylim(0, 4)
             # par2.set_ylim(1, 65)
@@ -607,6 +663,12 @@ def main():
             m_chi_csv_GeV = []
             for i in range(len(m_chi_csv)):
                 m_chi_csv_GeV.append(m_chi_csv[i]/g_per_GeV)
+
+            # write to CSV
+            m_chi_csv_GeV = np.asarray(m_chi_csv_GeV)
+            evap_sample = np.asarray(evap_sample)
+            output = np.column_stack((m_chi_csv_GeV.flatten(), evap_sample.flatten()))
+            np.savetxt('evap4.csv',output,delimiter=',')
 
             # PLOT
             plt.plot(m_chi_csv_GeV, evap_sample, ls = '-', linewidth = 1, label=mesa_lab)
