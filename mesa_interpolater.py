@@ -406,6 +406,60 @@ def mesa_interp(prof):
     global R_star_cgs
     R_star_cgs = prof.photosphere_r * cm_per_Rsun
 
+def rho_c_poly(star):
+    '''Density at center of polytrope'''
+    # getting stellar params
+    Mstar = star.get_mass_grams() #grams
+    Rstar = star.get_radius_cm()  #cm
+    # x-intercept of the theta function
+    xi_1 = xis[-1]
+    # slope of laneEmden at Theta = 0
+    deriv_xi1 = theta.derivatives(xis[-1])[1]
+    # central polytropic density as per n=3 polytropic model
+    rhoc_poly = (-1/(4*np.pi)) * ((xi_1/Rstar)**3) * (Mstar/(xi_1**2)) * (deriv_xi1)**-1 #g/cm^3
+    return rhoc_poly
+
+def phi_poly(xi, star):
+    '''polytropic potential'''
+    G = 6.6743*10**(-8) # gravitational constant in cgs units
+    phi_xi = 4*np.pi*G*(polytrope3_rhoc(star))*(star.get_radius_cm()/xis[-1])**2 * (1 - theta(xi)) #cgs units
+    return phi_xi
+
+def eta_poly(xi):
+    '''Number density of proton distribution in n = 3 polytrope'''
+    eta_xi = theta_cube(xi)
+    return eta_xi
+
+def n_chi_poly(mx, xi, star): #Normalized
+    '''isotropic DM distribution using potential from n=3 polytrope'''
+    kb = 1.380649e-16 #Boltzmann constant in cgs Units (erg/K)
+    # finding Tx using Temperature function
+    Tx = tau_fit(mx, star) * 10**8 #K
+    # mx in g
+    mx_g = mx*1.783e-24
+    # numerical DM number density profile for each DM mass (normalized)
+    nx_xi_val = np.exp(-mx_g*potential_poly(xi, star)/(kb*Tx)) 
+    return nx_xi_val
+
+# 'Lane_Emden.csv'
+def read_in_poly(name):
+    '''retrieves solution to laneEmden n=3'''
+    xis = []
+    theta_arr = []
+    with open(name) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            xis.append(float(row[0]))
+            theta_arr.append(float(row[1]))
+    theta_cube = UnivariateSpline(xis, np.array(theta_arr)**3, k = 5, s = 0)
+    # interpolating points for theta function
+    theta = UnivariateSpline(xis, theta_arr, k = 5, s = 0)
+    return (xis, theta, theta_cube)
+
+def T_poly():
+
+def n_p_poly():
+
 ########
 # MAIN #
 ########
@@ -428,12 +482,14 @@ def main():
     # set up some ploting stuff
     fig = plt.figure(figsize = (12,8))
     plt.style.use('fast')
-    palette = plt.get_cmap('viridis')
+    palette = plt.get_cmap('magma')
     palette.set_over('white')
     palette.set_under('white')
 
     # polytrope definition
     M100 = PopIIIStar(100, 10**0.6147, 10**6.1470, 1.176e8, 32.3, 10**6)
+    M300 = PopIIIStar(300, 10**0.8697, 10**6.8172, 1.245e8, 18.8, 10**6)
+    M1000 = PopIIIStar(1000, 10**1.1090, 10**7.3047, 1.307e8, 10.49, 10**6)
 
     if args.direc and args.profile:
         # read in MESA data from files specified in command line arguments
@@ -486,12 +542,12 @@ def main():
             fixed_axis_3 = par3.get_grid_helper().new_fixed_axis
             fixed_axis_4 = par4.get_grid_helper().new_fixed_axis
 
-            par2.axis["right"] = fixed_axis_2(loc="right", axes=par2,offset=(offset, 0))
+            par1.axis["right"] = fixed_axis_2(loc="right", axes=par2,offset=(offset, 0))
+            par1.axis["right"].toggle(all=True)
+            par2.axis["right"] = fixed_axis_3(loc="right", axes=par3,offset=(offset*2, 0))
             par2.axis["right"].toggle(all=True)
-            par3.axis["right"] = fixed_axis_3(loc="right", axes=par3,offset=(offset*2, 0))
+            par3.axis["right"] = fixed_axis_4(loc="right", axes=par4,offset=(offset*3, 0))
             par3.axis["right"].toggle(all=True)
-            par4.axis["right"] = fixed_axis_4(loc="right", axes=par4,offset=(offset*3, 0))
-            par4.axis["right"].toggle(all=True)
 
             # host.set_xlim(0, 2)
             # host.set_ylim(0, 2)
@@ -500,14 +556,16 @@ def main():
 
             par1.set_ylabel("Temperature [K]")
             par2.set_ylabel("Escape Velocity")
-            par3.set_ylabel("H Number Density")
-            par4.set_ylabel("Gravitational Potential")
+            par3.set_ylabel("Gravitational Potential")
 
-            p1, = host.plot(r, rho_sample, label="Density")
-            p2, = par1.plot(r, T_sample, label="Temperature")
-            p3, = par2.plot(r, v_esc_sample, label="Escape Velocity")
-            p4, = par3.plot(r, n_p_sample, label="H Number Density")
-            p5, = par4.plot(r, phi_sample, label="Gravitational Potential")
+            p1, = host.plot(r, rho_sample, label="Density", color=palette(1/10), linewidth=2)
+            p2, = par1.plot(r, T_sample, label="Temperature", color=palette(3/10), linewidth=2)
+            p3, = par2.plot(r, v_esc_sample, label="Escape Velocity", color=palette(6/10), linewidth=2)
+            p4, = par3.plot(r, phi_sample, label="Gravitational Potential", color=palette(8/10), linewidth=2)
+            # b1, = host.plot(r, rho_sample, label="Density", color=palette(1/10), linewidth=2)
+            # b2, = par1.plot(r, T_sample, label="Temperature", color=palette(3/10), linewidth=2)
+            # b3, = par2.plot(r, v_esc_sample, label="Escape Velocity", color=palette(6/10), linewidth=2)
+            # b4, = par3.plot(r, phi_sample, label="Gravitational Potential", color=palette(8/10), linewidth=2)
 
             # par1.set_ylim(0, 4)
             # par2.set_ylim(1, 65)
@@ -515,14 +573,13 @@ def main():
             par1.tick_params(axis='y', colors=p2.get_color())
             par2.tick_params(axis='y', colors=p3.get_color())
             par3.tick_params(axis='y', colors=p4.get_color())
-            par4.tick_params(axis='y', colors=p5.get_color())
 
             host.legend()
-            host.axis["left"].label.set_color(p1.get_color())
-            par1.axis["right"].label.set_color(p2.get_color())
-            par2.axis["right"].label.set_color(p3.get_color())
-            par3.axis["right"].label.set_color(p4.get_color())
-            par4.axis["right"].label.set_color(p5.get_color())
+            # host.axis["left"].label.set_color(p1.get_color())
+            # par1.axis["right"].label.set_color(p2.get_color())
+            # par2.axis["right"].label.set_color(p3.get_color())
+            # par3.axis["right"].label.set_color(p4.get_color())
+            # par4.axis["right"].label.set_color(p5.get_color())
             plt.draw()
             plt.show()
 
