@@ -343,6 +343,7 @@ def read_in_T_chi(name):
     return (m_chi_csv, T_chi_csv, T_chi_fit)
 
 def solve_T_chi(m_chi_sample):
+    '''solves T_chi in the SP85 equation 4.10 using fsolve'''
     m_chi_sample_cgs = []
     for i in range(len(m_chi_sample)):
         m_chi_sample_cgs.append(g_per_GeV * m_chi_sample[i])
@@ -419,16 +420,27 @@ def rho_c_poly(star):
     rhoc_poly = (-1/(4*np.pi)) * ((xi_1/Rstar)**3) * (Mstar/(xi_1**2)) * (deriv_xi1)**-1 #g/cm^3
     return rhoc_poly
 
-def phi_poly(xi, star):
+def rho_poly(r, star):
+    '''Density at radius r of polytrope'''
+    xi = 6.89*(r / star.get_radius_cm())
+    return rho_c_poly(star) * theta_cube(xi)
+
+def phi_poly(r, star):
     '''polytropic potential'''
+    xi = 6.89*(r / star.get_radius_cm())
     G = 6.6743*10**(-8) # gravitational constant in cgs units
     phi_xi = 4*np.pi*G*(polytrope3_rhoc(star))*(star.get_radius_cm()/xis[-1])**2 * (1 - theta(xi)) #cgs units
     return phi_xi
 
-def eta_poly(xi):
-    '''Number density of proton distribution in n = 3 polytrope'''
+def eta_poly(r):
+    '''dimensionless number density of proton distribution in n = 3 polytrope'''
+    xi = 6.89*(r / star.get_radius_cm())
     eta_xi = theta_cube(xi)
     return eta_xi
+
+def n_p_poly(eta):
+    '''takes eta of a N=3 polytrope, and then coverts to number density'''
+    return n_p
 
 def n_chi_poly(mx, xi, star): #Normalized
     '''isotropic DM distribution using potential from n=3 polytrope'''
@@ -457,8 +469,8 @@ def read_in_poly(name):
     return (xis, theta, theta_cube)
 
 def T_poly():
-
-def n_p_poly():
+    '''temperature from polytrope'''
+    #TODO: how to get temperature from N=3 model? 
 
 ########
 # MAIN #
