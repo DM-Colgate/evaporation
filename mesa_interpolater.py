@@ -311,7 +311,6 @@ def SP85_EQ410(T_chi, m_chi, R_star):
 
 def normfactor(r, m_chi, T_chi):
     '''normalization factor'''
-    print("In the normfactor() function now")
     t1 = mp.erf(v_c(r)/v_chi(r, m_chi, T_chi))
     t2 = (2/np.pi)*(v_c(r)/v_chi(r, m_chi, T_chi))
     t3 = np.exp(-1*v_c(r)**2 /(v_chi(r, m_chi, T_chi)**2))
@@ -319,7 +318,6 @@ def normfactor(r, m_chi, T_chi):
 
 def evap_rate_integrand(r, T_chi, m_chi, sigma):
     '''the integrand that evap_rate() will evaluate'''
-    print("In the evap_rate_integrand() function now")
     r311 =  R311_2(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
     # r39 =  R39(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
     # print("DIFF = ", r39-r311)
@@ -328,7 +326,6 @@ def evap_rate_integrand(r, T_chi, m_chi, sigma):
 
 def evap_rate(T_chi, m_chi, sigma):
     '''evaporation rate of DM for the whole star'''
-    print("In the evap_rate() function now")
     return quad(evap_rate_integrand, 0, R_star_cgs, args=(T_chi, m_chi, sigma))[0] * quad(n_chi, 0, R_star_cgs, args=(T_chi, m_chi))[0]
 
 def read_in_T_chi(name):
@@ -550,7 +547,6 @@ def main():
 
         # radius in cm
         r = np.linspace(prof.radius_cm[-1], prof.radius_cm[0], 100)
-        r_poly = np.linspace(prof.radius_cm[-1], M100.get_radius_cm(), 100)
 
         # debugging
         # v_esc_poly_sample = []
@@ -579,6 +575,7 @@ def main():
                 v_esc_sample.append(v_esc(r[i]))
 
             if args.poly:
+                r_poly = np.linspace(prof.radius_cm[-1], M100.get_radius_cm(), 100)
                 T_poly_sample = []
                 rho_poly_sample = []
                 phi_poly_sample = []
@@ -668,7 +665,7 @@ def main():
             m_chi_csv_GeV = np.asarray(m_chi_csv_GeV)
             evap_sample = np.asarray(evap_sample)
             output = np.column_stack((m_chi_csv_GeV.flatten(), evap_sample.flatten()))
-            np.savetxt('evap4.csv',output,delimiter=',')
+            np.savetxt('evap4.csv.1',output,delimiter=',')
 
             # PLOT
             plt.plot(m_chi_csv_GeV, evap_sample, ls = '-', linewidth = 1, label=mesa_lab)
