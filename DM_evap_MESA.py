@@ -195,6 +195,7 @@ def grho(r, m_chi, T_chi):
 
 def xi_2(r, m_chi, T_chi):
     '''not the polytope xi!!!!!!, just a made up goulde function'''
+    ###TODO: invalid root???
     val =  np.sqrt(mu_minus(mu(m_chi))**2 + nu(r, m_chi, T_chi))
     return val
 
@@ -231,6 +232,7 @@ def gamma(pm, r, m_chi, T_chi):
 
 def xi(r, m_chi, T_chi):
     '''not the polytope xi!!!!!!, just a made up goulde function'''
+    ###TODO: invalid root???
     return np.sqrt(mu_minus(mu(m_chi))**2 + T(r)/(T_chi*mu(m_chi)))
 
 def chi(a, b):
