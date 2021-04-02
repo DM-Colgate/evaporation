@@ -174,6 +174,7 @@ def n_chi(r, T_chi, m_chi):
 
 def alpha(pm, r, m_chi, w, v):
     '''made up goulde function'''
+    ###TDOD: boltzmand constant???
     if (pm == '+'):
         val = (m_p/(2 * k_cgs * T(r)))**(1/2) * (mu_plus(mu(m_chi)) * v + mu_minus(mu(m_chi)) * w)
     if (pm == '-'):
@@ -182,6 +183,7 @@ def alpha(pm, r, m_chi, w, v):
 
 def gamma_2(pm, r, m_chi, T_chi, w, v):
     '''made up goulde function'''
+    ###TDOD: boltzmand constant???
     if (pm == '+'):
         val = np.sqrt(m_p / (2 *T(r))) * (grho(r, m_chi, T_chi)*v + xi_2(r, m_chi, T_chi)*w)
     if (pm == '-'):
@@ -216,6 +218,7 @@ def E_c(m_chi, w):
 
 def beta(pm, r, m_chi, w, v):
     '''made up goulde function'''
+    ###TDOD: boltzmand constant???
     if (pm == '+'):
         val = (m_p/(2 * T(r)))**(1/2) * (mu_minus(mu(m_chi)) * v + mu_plus(mu(m_chi)) * w)
     if (pm == '-'):
@@ -224,6 +227,7 @@ def beta(pm, r, m_chi, w, v):
 
 def gamma(pm, r, m_chi, T_chi):
     '''made up goulde function'''
+    ###TDOD: boltzmand constant???
     if (pm == '+'):
         val = (m_p/(2 * T(r)))**(1/2) * ((mu_plus(mu(m_chi)) * mu_minus(mu(m_chi)) )*v_esc(r)/xi(r, m_chi, T_chi) + xi(r, m_chi, T_chi)*v_c(r))
     if (pm == '-'):
