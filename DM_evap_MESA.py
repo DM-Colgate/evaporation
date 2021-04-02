@@ -321,6 +321,7 @@ def SP85_EQ410(T_chi, m_chi, R_star):
 
 def normfactor(r, m_chi, T_chi):
     '''normalization factor'''
+    ###TODO:check
     t1 = sc.erf(v_c(r)/v_chi(r, m_chi, T_chi))
     t2 = (2/np.pi)*(v_c(r)/v_chi(r, m_chi, T_chi))
     t3 = np.exp(-1*v_c(r)**2 /(v_chi(r, m_chi, T_chi)**2))
@@ -708,7 +709,7 @@ def main():
             plt.title("Gravitational Potential: MESA (Windhorst) vs. N=3, $100 M_{\\odot}$")
             plt.legend()
             plt.xlabel("$r$ [cm]")
-            plt.ylabel("$\phi$ [ergs/a]")
+            plt.ylabel("$\phi$ [ergs/g]")
             plt.savefig("Ilie4_700_phi.pdf")
             plt.clf()
 
@@ -716,8 +717,10 @@ def main():
         if args.G311:
             # NOW CALC EVAP RATES
             R311_sample = []
+            norm = []
             for i in range(len(r)):
                 R311_sample.append(R311(r[i], T_chi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma))
+                norm.append(normfactor(r[i], 10**(-2)*g_per_GeV, T_chi_fit(10**(-2)*g_per_GeV)))
             print(R311_sample)
 
             # PLOT
@@ -729,6 +732,17 @@ def main():
             plt.yscale("log")
             # plt.xscale("log")
             plt.savefig("Ilie4_700_R.pdf")
+            # plt.show()
+            plt.clf()
+
+            plt.plot(r, norm, ls = '-', linewidth = 2, label=mesa_lab)
+            plt.title("MESA Gould Normalization Factor $100 M_{\\odot}$ (Windhorst)")
+            plt.legend()
+            plt.xlabel('$r$ [cm]')
+            plt.ylabel('')
+            plt.yscale("log")
+            # plt.xscale("log")
+            # plt.savefig("Ilie4_700_R.pdf")
             plt.show()
             plt.clf()
 
