@@ -472,6 +472,8 @@ def read_in_poly(name):
 def T_poly(r, star):
     '''temperature from polytrope'''
     xi = 6.89*(r / star.get_radius_cm())
+    ###TODO: use polytrop central temp
+    ###T(0) is a placeholder###
     return T(0) * theta(xi)
 
 def v_esc_poly(r, star):
@@ -547,12 +549,6 @@ def main():
 
         # radius in cm
         r = np.linspace(prof.radius_cm[-1], prof.radius_cm[0], 100)
-
-        # debugging
-        # v_esc_poly_sample = []
-        # for i in range(len(r_poly)):
-        #     v_esc_poly_sample.append(v_esc_poly(r_poly[i], M100))
-        # print(v_esc_poly_sample)
 
         # set up an interpolation for phi that's faster than the integration
         global phi_fit
@@ -647,6 +643,58 @@ def main():
             # par4.axis["right"].label.set_color(p5.get_color())
             plt.draw()
             plt.show()
+
+            # PLOT density
+            plt.plot(r, rho_sample, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
+            plt.plot(r_poly, rho_poly_sample, label="N=3 Polytrope", color=palette1(7/10), linewidth=2, ls='--')
+            plt.title("Density: MESA (Windhorst) vs. N=3, $100 M_{\\odot}$")
+            plt.legend()
+            plt.xlabel("$r$ [cm]")
+            plt.ylabel("$\\rho$ [$g/cm^3$]")
+            plt.savefig("Ilie4_700_density.pdf")
+            plt.clf()
+
+            # PLOT temp
+            plt.plot(r, T_sample, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
+            plt.plot(r_poly, T_poly_sample, label="N=3 Polytrope", color=palette1(7/10), linewidth=2, ls='--')
+            plt.title("Temperature: MESA (Windhorst) vs. N=3, $100 M_{\\odot}$")
+            plt.legend()
+            plt.xlabel('$r$ [cm]')
+            plt.ylabel('$T$ [K]')
+            plt.savefig("Ilie4_700_temp.pdf")
+            plt.clf()
+
+            # PLOT n_p
+            plt.plot(r, n_p_sample, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
+            plt.plot(r_poly, n_p_poly_sample, label="N=3 Polytrope", color=palette1(7/10), linewidth=2, ls='--')
+            plt.title("Proton Number Density: MESA (Windhorst) vs. N=3, $100 M_{\\odot}$")
+            plt.legend()
+            plt.yscale("log")
+            plt.xscale("log")
+            plt.xlabel("$r$ [cm]")
+            plt.ylabel("$n_p$ [$1/cm^3$]")
+            plt.savefig("Ilie4_700_np.pdf")
+            plt.clf()
+
+            # PLOT v_esc
+            plt.plot(r, v_esc_sample, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
+            plt.plot(r_poly, v_esc_poly_sample, label="N=3 Polytrope", color=palette1(7/10), linewidth=2, ls='--')
+            plt.title("Escape Velocity: MESA (Windhorst) vs. N=3, $100 M_{\\odot}$")
+            plt.legend()
+            plt.xlabel("$r$ [cm]")
+            plt.ylabel("$v_{esc}$ [cm/s]")
+            plt.savefig("Ilie4_700_vesc.pdf")
+            plt.clf()
+
+            # PLOT gravitation pot
+            plt.plot(r, phi_sample, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
+            plt.plot(r_poly, phi_poly_sample, label="N=3 Polytrope", color=palette1(7/10), linewidth=2, ls='--')
+            plt.title("Gravitational Potential: MESA (Windhorst) vs. N=3, $100 M_{\\odot}$")
+            plt.legend()
+            plt.xlabel("$r$ [cm]")
+            plt.ylabel("$\phi$ [ergs/a]")
+            plt.savefig("Ilie4_700_phi.pdf")
+            plt.clf()
 
 
         if args.evap:
