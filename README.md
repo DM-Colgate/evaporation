@@ -55,6 +55,8 @@ These can be printed with `./DM_evap_MESA.py -h`.
  - [X] Fix polytrope number density!!!
  - [X] How to get polytrope central temp???
  - [ ] Two different cetral densities for polytrope?
+ - [ ] Why is MESA's Gould 3.11 R(w|v) 10^9 larger than caleb's?
+ - [ ] Why is v_esc so different for MESA and N=3?
  - [ ] Compare Goulde 3.11 R(w|v) function against Caleb's.
  - [ ] Check V_esc within the star is being calculated right.
  - [ ] Check normalization factor.

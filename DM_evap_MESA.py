@@ -44,7 +44,7 @@ class PopIIIStar:
         self.core_density = rhoc
         self.lifetime = life_star
 
-    #Calculates stellar volume
+    # calculates stellar volume
     def get_vol(self):
         vol = (4/3) * np.pi * (self.radius*6.96e10)**3 #in cm^3
         return vol
@@ -204,10 +204,12 @@ def nu(r, m_chi, T_chi):
     return val
 
 def E_e(m_chi, v):
+    '''escape energy'''
     val =  m_chi * v**2 /2
     return val
 
 def E_c(m_chi, w):
+    '''cutoff energy'''
     val =  m_chi * w**2 /2
     return val
 
@@ -240,9 +242,11 @@ def mu(m_chi):
     return m_chi / m_p
 
 def mu_plus(mu):
+    '''dimensionless mass functions'''
     return (mu + 1)/ 2
 
 def mu_minus(mu):
+    '''dimensionless mass functions'''
     return (mu - 1 )/ 2
 
 def v_c(r):
@@ -408,17 +412,24 @@ def mesa_interp(prof):
     global R_star_cgs
     R_star_cgs = prof.photosphere_r * cm_per_Rsun
 
+#def rho_c_poly(star):
+#    '''Density at center of polytrope'''
+#    ###TODO: not sure which central density to use
+#    # getting stellar params
+#    Mstar = star.get_mass_grams() #grams
+#    Rstar = star.get_radius_cm()  #cm
+#    # x-intercept of the theta function
+#    xi_1 = xis[-1]
+#    # slope of laneEmden at Theta = 0
+#    deriv_xi1 = theta.derivatives(xis[-1])[1]
+#    # central polytropic density as per n=3 polytropic model
+#    rhoc_poly = (-1/(4*np.pi)) * ((xi_1/Rstar)**3) * (Mstar/(xi_1**2)) * (deriv_xi1)**-1 #g/cm^3
+#    return rhoc_poly
+
 def rho_c_poly(star):
     '''Density at center of polytrope'''
-    # getting stellar params
-    Mstar = star.get_mass_grams() #grams
-    Rstar = star.get_radius_cm()  #cm
-    # x-intercept of the theta function
-    xi_1 = xis[-1]
-    # slope of laneEmden at Theta = 0
-    deriv_xi1 = theta.derivatives(xis[-1])[1]
-    # central polytropic density as per n=3 polytropic model
-    rhoc_poly = (-1/(4*np.pi)) * ((xi_1/Rstar)**3) * (Mstar/(xi_1**2)) * (deriv_xi1)**-1 #g/cm^3
+    ###TODO: not sure which central density to use
+    rhoc_poly = star.core_density
     return rhoc_poly
 
 def rho_poly(r, star):
@@ -494,6 +505,7 @@ def main():
     parser.add_argument("-M", "--MESA", help="plot stellar parameters from MESA", action='store_true')
     parser.add_argument("-P", "--poly", help="plot stellar parameters for N=3 polytope", action='store_true')
     parser.add_argument("-e", "--evap", help="plot DM evap rate from MESA data files", action='store_true')
+    parser.add_argument("-R", "--G311", help="plot Gould 3.11 equation", action='store_true')
     args = parser.parse_args()
 
     # DM nucleon cross section
@@ -695,6 +707,24 @@ def main():
             plt.clf()
 
 
+        if args.G311:
+            # NOW CALC EVAP RATES
+            R311_sample = []
+            for i in range(len(r)):
+                R311_sample.append(R311(r[i], T_chi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma))
+
+            # PLOT
+            plt.plot(r, R311_sample, ls = '-', linewidth = 2, label=mesa_lab)
+            plt.title("MESA Gould Eq. 3.11 $100 M_{\\odot}$ (Windhorst)")
+            plt.legend()
+            plt.xlabel('$r$ [cm]')
+            plt.ylabel('$R(w|v)$ [???]')
+            plt.yscale("log")
+            # plt.xscale("log")
+            plt.savefig("Ilie4_700_R.pdf")
+            plt.show()
+            plt.clf()
+
         if args.evap:
             # NOW CALC EVAP RATES
             evap_sample = []
@@ -711,18 +741,17 @@ def main():
             m_chi_csv_GeV = np.asarray(m_chi_csv_GeV)
             evap_sample = np.asarray(evap_sample)
             output = np.column_stack((m_chi_csv_GeV.flatten(), evap_sample.flatten()))
-            np.savetxt('evap4.csv.1',output,delimiter=',')
+            np.savetxt('Ilie4_evap.csv',output,delimiter=',')
 
             # PLOT
             plt.plot(m_chi_csv_GeV, evap_sample, ls = '-', linewidth = 1, label=mesa_lab)
-            # plt.plot(m_chi_csv_GeV, diff, ls = '-', linewidth = 1, label="diff")
             plt.title("MESA DM Evap. Rate $100 M_{\\odot}$ (Windhorst)")
             plt.legend()
             plt.xlabel('$m_{\\chi}$ [Gev]')
             plt.ylabel('$E$ [$s^{-1}$]')
             plt.yscale("log")
             plt.xscale("log")
-            plt.savefig("NEW_evap4.pdf")
+            plt.savefig("Ilie4_700_E.pdf")
             plt.show()
             plt.clf()
 
