@@ -70,16 +70,16 @@ These can be printed with `./DM_evap_MESA.py -h`.
  - [ ] Specify name of output CSV and plots from command line.
 
 ### quad error
-'''
+```
 IntegrationWarning: The maximum number of subdivisions (50) has been achieved. If increasing the limit yields no improvement it is advised to analyze the integrand in order to determine the difficulties. If the position of a local difficulty can be determined (singularity, discontinuity) one will probably gain from splitting up the interval and calling the integrator on the subranges. Perhaps a special-purpose integrator should be used.
 IntegrationWarning: The occurrence of roundoff error is detected, which prevents the requested tolerance from being achieved. The error may be underestimated.
-'''
+```
 
 # Plots
 ![density](./plots/Ilie4_700_density.png)
 ![number density](./plots/Ilie4_700_np.png)
 ![potential](./plots/Ilie4_700_phi.png)
 ![temperature](./plots/Ilie4_700_temp.png)
-![escape velocity](./plots/Ilie4_700_temp.png)
+![escape velocity](./plots/Ilie4_700_vesc.png)
 ![Eq. 3.11](./plots/Ilie4_700_R.png)
 ![evaporation](./plots/Ilie4_700_evap.png)
