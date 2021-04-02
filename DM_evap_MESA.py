@@ -177,13 +177,13 @@ def alpha(pm, r, m_chi, w, v):
     if (pm == '+'):
         val = (m_p/(2 * k_cgs * T(r)))**(1/2) * (mu_plus(mu(m_chi)) * v + mu_minus(mu(m_chi)) * w)
     if (pm == '-'):
-        val = (m_p/(2 * k_cgs* T(r)))**(1/2) * (mu_plus(mu(m_chi)) * v - mu_minus(mu(m_chi)) * w)
+        val = (m_p/(2 * k_cgs * T(r)))**(1/2) * (mu_plus(mu(m_chi)) * v - mu_minus(mu(m_chi)) * w)
     return val
 
 def gamma_2(pm, r, m_chi, T_chi, w, v):
     '''made up goulde function'''
     if (pm == '+'):
-        val = np.sqrt(m_p / (2*T(r))) * (grho(r, m_chi, T_chi)*v + xi_2(r, m_chi, T_chi)*w)
+        val = np.sqrt(m_p / (2 *T(r))) * (grho(r, m_chi, T_chi)*v + xi_2(r, m_chi, T_chi)*w)
     if (pm == '-'):
         val = np.sqrt(m_p / (2*T(r))) * (grho(r, m_chi, T_chi)*v - xi_2(r, m_chi, T_chi)*w)
     return val
@@ -225,9 +225,9 @@ def beta(pm, r, m_chi, w, v):
 def gamma(pm, r, m_chi, T_chi):
     '''made up goulde function'''
     if (pm == '+'):
-        val = (m_p/(2*T(r)))**(1/2) * ((mu_plus(mu(m_chi)) * mu_minus(mu(m_chi)) )*v_esc(r)/xi(r, m_chi, T_chi) + xi(r, m_chi, T_chi)*v_c(r))
+        val = (m_p/(2 * T(r)))**(1/2) * ((mu_plus(mu(m_chi)) * mu_minus(mu(m_chi)) )*v_esc(r)/xi(r, m_chi, T_chi) + xi(r, m_chi, T_chi)*v_c(r))
     if (pm == '-'):
-        val = (m_p/(2*T(r)))**(1/2) * ((mu_plus(mu(m_chi)) * mu_minus(mu(m_chi)) )*v_esc(r)/xi(r, m_chi, T_chi) - xi(r, m_chi, T_chi)*v_c(r))
+        val = (m_p/(2 * T(r)))**(1/2) * ((mu_plus(mu(m_chi)) * mu_minus(mu(m_chi)) )*v_esc(r)/xi(r, m_chi, T_chi) - xi(r, m_chi, T_chi)*v_c(r))
     return val
 
 def xi(r, m_chi, T_chi):
@@ -237,7 +237,7 @@ def xi(r, m_chi, T_chi):
 
 def chi(a, b):
     '''made up goulde function'''
-    return np.sqrt(np.pi)/2 * (mp.erf(b) - mp.erf(a))
+    return np.sqrt(np.pi)/2 * (sc.erf(b) - sc.erf(a))
 
 def mu(m_chi):
     '''dimensional less DM mass'''
@@ -317,7 +317,7 @@ def SP85_EQ410(T_chi, m_chi, R_star):
 
 def normfactor(r, m_chi, T_chi):
     '''normalization factor'''
-    t1 = mp.erf(v_c(r)/v_chi(r, m_chi, T_chi))
+    t1 = sc.erf(v_c(r)/v_chi(r, m_chi, T_chi))
     t2 = (2/np.pi)*(v_c(r)/v_chi(r, m_chi, T_chi))
     t3 = np.exp(-1*v_c(r)**2 /(v_chi(r, m_chi, T_chi)**2))
     return t1 - t2*t3
@@ -714,6 +714,7 @@ def main():
             R311_sample = []
             for i in range(len(r)):
                 R311_sample.append(R311(r[i], T_chi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma))
+            print(R311_sample)
 
             # PLOT
             plt.plot(r, R311_sample, ls = '-', linewidth = 2, label=mesa_lab)
