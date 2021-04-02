@@ -441,7 +441,7 @@ def eta_poly(r, star):
 
 def n_p_poly(r, star):
     '''takes eta of  a N=3 polytrope, and then coverts to number density'''
-    n_p = rho_c_poly(star) * eta_poly(r, star)
+    n_p = rho_c_poly(star) * eta_poly(r, star) / m_p
     return n_p
 
 def n_chi_poly(mx, xi, star): #Normalized
@@ -472,9 +472,7 @@ def read_in_poly(name):
 def T_poly(r, star):
     '''temperature from polytrope'''
     xi = 6.89*(r / star.get_radius_cm())
-    ###TODO: use polytrop central temp
-    ###T(0) is a placeholder###
-    return T(0) * theta(xi)
+    return star.core_temp * theta(xi)
 
 def v_esc_poly(r, star):
     '''Escape velocity of n=3 polytrope at given radius (dimensionless xi)'''

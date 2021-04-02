@@ -52,8 +52,9 @@ These can be printed with `./DM_evap_MESA.py -h`.
  - [X] Add comparison plots with N=3 poltropes.
  - [X] Code Goulde 3.11 R(w|v) function.
  - [X] Get MESA Evap. rates.
- - [ ] Fix polytrope number density!!!
- - [ ] How to get polytrope central temp???
+ - [X] Fix polytrope number density!!!
+ - [X] How to get polytrope central temp???
+ - [ ] Two different cetral densities for polytrope?
  - [ ] Compare Goulde 3.11 R(w|v) function against Caleb's.
  - [ ] Check V_esc within the star is being calculated right.
  - [ ] Check normalization factor.
