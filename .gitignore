@@ -3,3 +3,4 @@
 *.index
 # *.csv
 *.pdf
+!plots/*
