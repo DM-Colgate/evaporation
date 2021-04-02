@@ -67,3 +67,11 @@ These can be printed with `./DM_evap_MESA.py -h`.
  - [ ] Discrepency in central density between MESA and N=3?
  - [ ] Automate plotting multiple models and/or multiple stars.
  - [ ] Specify name of output CSV and plots from command line.
+
+# Plots
+![density](./plots/Ilie4_700_density.pdf)
+![number density](./plots/Ilie4_700_np.pdf)
+![potential](./plots/Ilie4_700_phi.pdf)
+![temperature](./plots/Ilie4_700_temp.pdf)
+![Eq. 3.11](./plots/Ilie4_700_R.pdf)
+![evaporation](./plots/Ilie4_700_evap.pdf)
