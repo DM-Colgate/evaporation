@@ -1,19 +1,19 @@
 # Documentation
-### Dependencies:
+### Dependencies
  - [py_mesa_reader](https://github.com/wmwolf/py_mesa_reader)
  - [scipy](https://www.scipy.org/)
  - [matplotlib](https://matplotlib.org/stable/index.html)
 
-### Usage:
-NOTE: Currently debuging and trying to get evaporation to work inside of `mesa_interpolator.py`, to run do:
+### Usage
+NOTE: Currently debuging and trying to get evaporation to work inside of `DM_evap_MESA.py`, to run do:
 ```
-./mesa_interpolater.py -D Ilie4_ii -p 700 -e
+./DM_evap_MESA.py -D Ilie4_ii -p 700 -e
 ```
 One I get reasonable evap I'll reorganize and get all the flags working again.
 
 Execute from the command line, in the directory that contains MESA log directories like so:
 ```
-├── evap_snapshot.py
+├── DM_evap_MESA.py
 └── mesa_1
     ├── history_1.data
     ├── profiles.index
@@ -24,7 +24,7 @@ Execute from the command line, in the directory that contains MESA log directori
 
 Specify the directory using the `-D` flag, then the index of profile file you wish to plot with the `-p` flag:
 
-```./evap_snapshot.py -D mesa_1 -p 700```.
+```./DM_evap_MESA.py -D mesa_1 -p 700```.
 
 Finally, pass the `-T`, `-t`, `-V`, or `-n` flags to specify which plot (or plots) to show.
 
@@ -40,32 +40,27 @@ optional arguments:
                         directory containing MESA profile and history files
   -p PROFILE, --profile PROFILE
                         index of the profile to use
-  -T, --TchiMchi        plot DM temperature vs DM mass
-  -t, --taumu           plot DM dimensionless temperature vs DM dimensionless mass
-  -V, --phi             plot radial graviation potential from MESA data files
-  -v, --phipoly         plot radial graviation potential for N=3 polytrope
-  -n, --np              plot proton number denisty from MESA data files
+  -T, --TchiMchi        solve for and plot DM temperature vs DM mass
+  -M, --MESA            plot stellar parameters from MESA
+  -P, --poly            plot stellar parameters for N=3 polytope
+  -e, --evap            plot DM evap rate from MESA data files
 ```
-These can be printed with `./evap_snapshot.py -h`.
+These can be printed with `./DM_evap_MESA.py -h`.
 
-
-# Note on Branches
-Please feel free to make any commits you want to the 'testing' branch. To switch branches simply use the 'checkout' command:
-
-`git checkout testing` or `git checkout master`
-
-Just make sure to comment your code and add an explanitory commit message.  
-
-
-# Issues
+# Issues/To Do
  - [X] Issues with the calculated potential from MESA's gravitational acceleration?
-
-
-# To Do
- - [ ] Implement MESA Evap. rates.
- - [ ] Implement N=3 polytrope Evap. rates.
- - [ ] Implement closed form Evap. approx.
- - [ ] Simultaneously plot multiple models and/or multiple stars.
- - [ ] Add flag to specify polytropic index?
- - [ ] Add flag to make HR plots with ZAMS marked?
- - [ ] Autoidenitification of the model closest to ZAMS?
+ - [X] Add comparison plots with N=3 poltropes.
+ - [X] Code Goulde 3.11 R(w|v) function.
+ - [X] Get MESA Evap. rates.
+ - [ ] Fix polytrope number density!!!
+ - [ ] How to get polytrope central temp???
+ - [ ] Compare Goulde 3.11 R(w|v) function against Caleb's.
+ - [ ] Check V_esc within the star is being calculated right.
+ - [ ] Check normalization factor.
+ - [ ] Check input functions to DM temp (i.e. boltzman constant).
+ - [ ] Check DM temp lines up with expected.
+ - [ ] Run evap code using polytrope stellar functions, is it still bad?
+ - [ ] Precision issues in scipy quad integrals?
+ - [ ] Discrepency in central density between MESA and N=3?
+ - [ ] Automate plotting multiple models and/or multiple stars.
+ - [ ] Specify name of output CSV and plots from command line.

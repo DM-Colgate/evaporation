@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # this script reads MESA radial profile data files
 # calculates DM temperature acording in Eq. 4.10 in SP85 (Spergel and Press, 1985)
-# then uses that DM temp and data from MESA to calculate DM evaporation rate
 
 ####################
 # IMPORT LIBRARIES #
@@ -48,6 +47,7 @@ def SP85_EQ410(Tchi):
 
 def calc_phi_mesa(prof):
     ''' calculate potential from accleration given by mesa'''
+    #TODO: confirm this
     phi = []
     r = []
     acc = []
@@ -63,6 +63,7 @@ def calc_phi_mesa(prof):
 
 def calc_np_mesa(prof):
     ''' calculate proton number density using rho given by mesa'''
+    #TODO: confirm this
     np_mesa = []
     for k in range(len(prof.rho)):
         np_mesa.append(prof.x_mass_fraction_H[k] * prof.rho[k])
@@ -80,7 +81,6 @@ def calc_Tchi(func, Tchi_guess):
     ''' returns for what Tchi the input function is zero'''
     return fsolve(func, Tchi_guess)
 
-
 ########
 # MAIN #
 ########
@@ -92,10 +92,7 @@ def main():
     parser.add_argument("-T", "--TchiMchi", help="plot DM temperature vs DM mass", action='store_true')
     parser.add_argument("-t", "--taumu", help="plot DM dimensionless temperature vs DM dimensionless mass", action='store_true')
     parser.add_argument("-V", "--phi", help="plot radial graviation potential from MESA data files", action='store_true')
-    parser.add_argument("-v", "--phipoly", help="plot radial graviation potential for N=3 polytrope", action='store_true')
     parser.add_argument("-n", "--np", help="plot proton number denisty from MESA data files", action='store_true')
-    parser.add_argument("-e", "--evap", help="plot DM evap rate from MESA data files", action='store_true')
-
     args = parser.parse_args()
 
     # set variables
@@ -150,7 +147,8 @@ def main():
         Tchi_guess = T_mesa[-1]
 
         # masses to test
-        mchi_sample = [0.00001, 0.000015, 0.00002, 0.00003, 0.00005, 0.00007, 0.0001, 0.00015, 0.0002, 0.0003, 0.0005, 0.0007, 0.001, 0.0015, 0.002, 0.003, 0.005, 0.007, 0.01, 0.015, 0.02, 0.03, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3, 0.5, 0.7, 1, 1.5, 2, 3, 5, 7, 10, 15, 20, 30, 50, 70, 100, 150, 200, 300, 500, 700, 1000, 1500, 2000, 3000, 5000, 7000, 10000, 15000]
+        # mchi_sample = [0.00001, 0.000015, 0.00002, 0.00003, 0.00005, 0.00007, 0.0001, 0.00015, 0.0002, 0.0003, 0.0005, 0.0007, 0.001, 0.0015, 0.002, 0.003, 0.005, 0.007, 0.01, 0.015, 0.02, 0.03, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3, 0.5, 0.7, 1, 1.5, 2, 3, 5, 7, 10, 15, 20, 30, 50, 70, 100, 150, 200, 300, 500, 700, 1000, 1500, 2000, 3000, 5000, 7000, 10000, 15000]
+        mchi_sample = np.logspace(-5, 6, 100)
         Tchi_sample = []
 
         # do MESA calcs and run thru all massses
@@ -167,11 +165,9 @@ def main():
             mu_sample.append(g_per_GeV * mchi_sample[i] / m_p)
             Tau_sample.append(Tchi_sample[i] / T_mesa[-1])
 
-    #Taking typical sigma value
+    # cross section value
     sigma = 1e-43
 
-    #DM Mass
-    mx = np.logspace(-4, 0, 30)
 
     # plot formatting
     fig = plt.figure(figsize = (12,8))
@@ -211,11 +207,8 @@ def main():
         plt.clf()
 
     # plot phi vs. r
-    if args.phipoly == True or args.phi == True:
-        if args.phi == True:
-            plt.plot(r_mesa_frac, phi_mesa, ls = '-', linewidth = 1, label=mesa_lab)
-        if args.phipoly == True:
-            plt.plot(xis_frac, phi_xi_poly, ls = '-', linewidth = 1, label="$100 M_{\\odot}$ N=3")
+    if args.phi == True:
+        plt.plot(r_mesa_frac, phi_mesa, ls = '-', linewidth = 1, label=mesa_lab)
         plt.title("Grav. Acc. (Windhorst and Polytrope)")
         plt.legend()
         plt.xlabel('$ r / R_{*} $')
@@ -224,24 +217,6 @@ def main():
         # plt.xscale("log")
         plt.show()
         plt.clf()
-
-
-    # evap vs mchi
-    if args.evap == True:
-        plt.plot(mx, E_G, label = 'Numerical, $M_\star = %i$'%star.mass, ls = '-')
-        plt.plot(mx, E_ilie2, label = 'Approximate Solution (New)', ls = '--')
-        plt.plot(mx, E_ilie, label = 'Approximate Solution (Old)', ls = '-.')
-        plt.plot(mx, E_mesa, label = mesa_lab, ls = '-.')
-        plt.xscale('log')
-        plt.yscale('log')
-        plt.xlabel('$m_X$ [GeV]', fontsize = 15)
-        plt.ylabel('$E$ [s$^{-1}$]', fontsize = 15)
-        plt.xlim(mx[0], mx[-1])
-        plt.title('DM Evaporation Rate in Population III Stars, $\\sigma = 10^{%i}$'%np.log10(sigma), fontsize = 15)
-        plt.legend(loc = 'best')
-        plt.savefig('Evap_mx_NumvsApprox.pdf', dpi = 200, bbox_inches = 'tight', pad_inches = 0)
-        plt.show()
-
 
 ###########
 # EXECUTE #
