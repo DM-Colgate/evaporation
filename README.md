@@ -56,6 +56,7 @@ These can be printed with `./DM_evap_MESA.py -h`.
  - [X] How to get polytrope central temp???
  - [X] Compare Goulde 3.11 R(w|v) function against Caleb's.
  - [X] Two different cetral densities for polytrope?
+ - [ ] Why is potential from MESA wrong by a factor of 0.5???
  - [ ] Boltzmann constant in alpha, beta, gamma and mpf(gibberish)?
  - [ ] Why is MESA's Gould 3.11 R(w|v) 10^9 larger than caleb's?
  - [ ] Why is v_esc so different for MESA and N=3?
