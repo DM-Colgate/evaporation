@@ -15,6 +15,7 @@ from scipy.optimize import fsolve
 from scipy.interpolate import interpolate
 from scipy.interpolate import UnivariateSpline
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 import matplotlib
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
@@ -185,9 +186,9 @@ def gamma_2(pm, r, m_chi, T_chi, w, v):
     '''made up goulde function'''
     ###TDOD: boltzmand constant???
     if (pm == '+'):
-        val = np.sqrt(m_p / (2 *T(r))) * (grho(r, m_chi, T_chi)*v + xi_2(r, m_chi, T_chi)*w)
+        val = np.sqrt(m_p / (2 * k_cgs * T(r))) * (grho(r, m_chi, T_chi)*v + xi_2(r, m_chi, T_chi)*w)
     if (pm == '-'):
-        val = np.sqrt(m_p / (2*T(r))) * (grho(r, m_chi, T_chi)*v - xi_2(r, m_chi, T_chi)*w)
+        val = np.sqrt(m_p / (2 * k_cgs * T(r))) * (grho(r, m_chi, T_chi)*v - xi_2(r, m_chi, T_chi)*w)
     return val
 
 def grho(r, m_chi, T_chi):
@@ -220,18 +221,18 @@ def beta(pm, r, m_chi, w, v):
     '''made up goulde function'''
     ###TDOD: boltzmand constant???
     if (pm == '+'):
-        val = (m_p/(2 * T(r)))**(1/2) * (mu_minus(mu(m_chi)) * v + mu_plus(mu(m_chi)) * w)
+        val = (m_p/(2 * k_cgs * T(r)))**(1/2) * (mu_minus(mu(m_chi)) * v + mu_plus(mu(m_chi)) * w)
     if (pm == '-'):
-        val = (m_p/(2 * T(r)))**(1/2) * (mu_minus(mu(m_chi)) * v - mu_plus(mu(m_chi)) * w)
+        val = (m_p/(2 * k_cgs * T(r)))**(1/2) * (mu_minus(mu(m_chi)) * v - mu_plus(mu(m_chi)) * w)
     return val
 
 def gamma(pm, r, m_chi, T_chi):
     '''made up goulde function'''
     ###TDOD: boltzmand constant???
     if (pm == '+'):
-        val = (m_p/(2 * T(r)))**(1/2) * ((mu_plus(mu(m_chi)) * mu_minus(mu(m_chi)) )*v_esc(r)/xi(r, m_chi, T_chi) + xi(r, m_chi, T_chi)*v_c(r))
+        val = (m_p/(2 * k_cgs * T(r)))**(1/2) * ((mu_plus(mu(m_chi)) * mu_minus(mu(m_chi)) )*v_esc(r)/xi(r, m_chi, T_chi) + xi(r, m_chi, T_chi)*v_c(r))
     if (pm == '-'):
-        val = (m_p/(2 * T(r)))**(1/2) * ((mu_plus(mu(m_chi)) * mu_minus(mu(m_chi)) )*v_esc(r)/xi(r, m_chi, T_chi) - xi(r, m_chi, T_chi)*v_c(r))
+        val = (m_p/(2 * k_cgs * T(r)))**(1/2) * ((mu_plus(mu(m_chi)) * mu_minus(mu(m_chi)) )*v_esc(r)/xi(r, m_chi, T_chi) - xi(r, m_chi, T_chi)*v_c(r))
     return val
 
 def xi(r, m_chi, T_chi):
@@ -558,7 +559,7 @@ def main():
 
         # ASSIGN ARRAYS FOR PLOTTING AND SAMPLING 
         # DM mass in GeV
-        m_chi_sample = np.logspace(-6, 5, 1000)
+        m_chi_sample = np.logspace(-6, 5, 100)
 
         # DM mass in grams
         m_chi_sample_cgs = []
@@ -566,7 +567,7 @@ def main():
             m_chi_sample_cgs.append(g_per_GeV * m_chi_sample[i])
 
         # radius in cm
-        r = np.linspace(prof.radius_cm[-1], prof.radius_cm[0], 1000)
+        r = np.linspace(prof.radius_cm[-1], prof.radius_cm[0], 100)
 
         # set up an interpolation for phi that's faster than the integration
         global phi_fit
@@ -725,8 +726,18 @@ def main():
                     beta_sample[i,j] = beta("+", r[i], m_chi_sample_cgs[j], 0.5*v_esc(r[i]), v_esc(r[i]))
                     gamma_sample[i,j] = gamma_2("+", r[i], m_chi_sample_cgs[j], T_chi_fit(m_chi_sample_cgs[j]), 0.5*v_esc(r[i]), v_esc(r[i]))
 
+            ### DEBUGGING
+            print(
+                "alpha = ",
+                alpha("+", 10**11, g_per_GeV*10**(-2), 0.5*v_esc(10**11), v_esc(10**11)),
+                "beta = ",
+                beta("+", 10**11, g_per_GeV*10**(-2), 0.5*v_esc(10**11), v_esc(10**11)),
+                "gamma = ",
+                gamma_2("+", 10**11, g_per_GeV*10**(-2), T_chi_fit(g_per_GeV*10**(-2)), 0.5*v_esc(10**11), v_esc(10**11))
+            )
+
             # alpha
-            plt.pcolormesh(m_chi_sample, r, alpha_sample, cmap=palette1, shading='auto', edgecolors='face')
+            plt.pcolormesh(m_chi_sample, r, alpha_sample, cmap=palette1, shading='auto', edgecolors='face', norm=colors.LogNorm(vmin=alpha_sample.min(), vmax=alpha_sample.max()))
             cbar = plt.colorbar()
             # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
             # cbar.set_ticks(list(np.linspace(9, 19, 11)))
@@ -741,7 +752,7 @@ def main():
             plt.clf()
 
             # beta
-            plt.pcolormesh(m_chi_sample, r, beta_sample, cmap=palette1, shading='auto', edgecolors='face')
+            plt.pcolormesh(m_chi_sample, r, beta_sample, cmap=palette1, shading='auto', edgecolors='face', norm=colors.LogNorm(vmin=abs(beta_sample.min()), vmax=abs(beta_sample.max())))
             cbar = plt.colorbar()
             # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
             # cbar.set_ticks(list(np.linspace(9, 19, 11)))
@@ -756,7 +767,7 @@ def main():
             plt.clf()
 
             # gamma
-            plt.pcolormesh(m_chi_sample, r, gamma_sample, cmap=palette1, shading='auto', edgecolors='face')
+            plt.pcolormesh(m_chi_sample, r, gamma_sample, cmap=palette1, shading='auto', edgecolors='face', norm=colors.LogNorm(vmin=abs(gamma_sample.min()), vmax=abs(gamma_sample.max())))
             cbar = plt.colorbar()
             # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
             # cbar.set_ticks(list(np.linspace(9, 19, 11)))
