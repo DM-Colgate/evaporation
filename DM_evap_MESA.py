@@ -513,6 +513,7 @@ def main():
     parser.add_argument("-P", "--poly", help="plot stellar parameters for N=3 polytope", action='store_true')
     parser.add_argument("-e", "--evap", help="plot DM evap rate from MESA data files", action='store_true')
     parser.add_argument("-R", "--G311", help="plot Gould 3.11 equation", action='store_true')
+    parser.add_argument("-H", "--heatmap", help="plot heatmaps for alpha, beta, and gamma", action='store_true')
     args = parser.parse_args()
 
     # DM nucleon cross section
@@ -526,8 +527,8 @@ def main():
     plt.style.use('fast')
     palette = plt.get_cmap('magma')
     palette1 = plt.get_cmap('viridis')
-    palette.set_over('white')
-    palette.set_under('white')
+    # palette.set_over('white')
+    # palette.set_under('white')
 
     if args.poly:
         # polytrope definitions
@@ -557,7 +558,7 @@ def main():
 
         # ASSIGN ARRAYS FOR PLOTTING AND SAMPLING 
         # DM mass in GeV
-        m_chi_sample = np.logspace(-6, 5, 50)
+        m_chi_sample = np.logspace(-6, 5, 1000)
 
         # DM mass in grams
         m_chi_sample_cgs = []
@@ -565,7 +566,7 @@ def main():
             m_chi_sample_cgs.append(g_per_GeV * m_chi_sample[i])
 
         # radius in cm
-        r = np.linspace(prof.radius_cm[-1], prof.radius_cm[0], 100)
+        r = np.linspace(prof.radius_cm[-1], prof.radius_cm[0], 1000)
 
         # set up an interpolation for phi that's faster than the integration
         global phi_fit
@@ -713,6 +714,61 @@ def main():
             plt.savefig("Ilie4_700_phi.pdf")
             plt.clf()
 
+        if args.heatmap:
+            alpha_sample = np.zeros([len(r), len(m_chi_sample)])
+            beta_sample = np.zeros([len(r), len(m_chi_sample)])
+            gamma_sample = np.zeros([len(r), len(m_chi_sample)])
+            for i in range(len(r)):
+                for j in range(len(m_chi_sample)):
+                    print("Calculating alpha, i = ", i, "/", len(r), ", j = ", j, "/", len(m_chi_sample_cgs))
+                    alpha_sample[i,j] = alpha("+", r[i], m_chi_sample_cgs[j], 0.5*v_esc(r[i]), v_esc(r[i]))
+                    beta_sample[i,j] = beta("+", r[i], m_chi_sample_cgs[j], 0.5*v_esc(r[i]), v_esc(r[i]))
+                    gamma_sample[i,j] = gamma_2("+", r[i], m_chi_sample_cgs[j], T_chi_fit(m_chi_sample_cgs[j]), 0.5*v_esc(r[i]), v_esc(r[i]))
+
+            # alpha
+            plt.pcolormesh(m_chi_sample, r, alpha_sample, cmap=palette1, shadding='auto')
+            cbar = plt.colorbar()
+            # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
+            # cbar.set_ticks(list(np.linspace(9, 19, 11)))
+            plt.title("Gould Alpha Function: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
+            # plt.legend()
+            plt.ylabel('$r$ [cm]')
+            # plt.ylim([0, 1.2*10**17])
+            plt.xlabel("$m_{\chi}$ [GeV]")
+            # plt.yscale("log")
+            plt.xscale("log")
+            plt.savefig("Ilie4_700_alpha.pdf")
+            plt.clf()
+
+            # beta
+            plt.pcolormesh(m_chi_sample, r, beta_sample, cmap=palette1, shadding='auto')
+            cbar = plt.colorbar()
+            # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
+            # cbar.set_ticks(list(np.linspace(9, 19, 11)))
+            plt.title("Gould Beta Function: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
+            # plt.legend()
+            plt.ylabel('$r$ [cm]')
+            # plt.ylim([0, 1.2*10**17])
+            plt.xlabel("$m_{\chi}$ [GeV]")
+            # plt.yscale("log")
+            plt.xscale("log")
+            plt.savefig("Ilie4_700_beta.pdf")
+            plt.clf()
+
+            # gamma
+            plt.pcolormesh(m_chi_sample, r, gamma_sample, cmap=palette1, shadding='auto')
+            cbar = plt.colorbar()
+            # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
+            # cbar.set_ticks(list(np.linspace(9, 19, 11)))
+            plt.title("Gould Gamma Function: 10^2 GeV, 10^-43 cm^-2, 100 Msun")
+            # plt.legend()
+            plt.ylabel('$r$ [cm]')
+            # plt.ylim([0, 1.2*10**17])
+            plt.xlabel("$m_{\chi}$ [GeV]")
+            # plt.yscale("log")
+            plt.xscale("log")
+            plt.savefig("Ilie4_700_beta.pdf")
+            plt.clf()
 
         if args.G311:
             # NOW CALC EVAP RATES
