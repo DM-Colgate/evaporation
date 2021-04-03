@@ -726,7 +726,7 @@ def main():
                     gamma_sample[i,j] = gamma_2("+", r[i], m_chi_sample_cgs[j], T_chi_fit(m_chi_sample_cgs[j]), 0.5*v_esc(r[i]), v_esc(r[i]))
 
             # alpha
-            plt.pcolormesh(m_chi_sample, r, alpha_sample, cmap=palette1, shadding='auto')
+            plt.pcolormesh(m_chi_sample, r, alpha_sample, cmap=palette1, shading='auto', edgecolors='face')
             cbar = plt.colorbar()
             # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
             # cbar.set_ticks(list(np.linspace(9, 19, 11)))
@@ -741,7 +741,7 @@ def main():
             plt.clf()
 
             # beta
-            plt.pcolormesh(m_chi_sample, r, beta_sample, cmap=palette1, shadding='auto')
+            plt.pcolormesh(m_chi_sample, r, beta_sample, cmap=palette1, shading='auto', edgecolors='face')
             cbar = plt.colorbar()
             # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
             # cbar.set_ticks(list(np.linspace(9, 19, 11)))
@@ -756,7 +756,7 @@ def main():
             plt.clf()
 
             # gamma
-            plt.pcolormesh(m_chi_sample, r, gamma_sample, cmap=palette1, shadding='auto')
+            plt.pcolormesh(m_chi_sample, r, gamma_sample, cmap=palette1, shading='auto', edgecolors='face')
             cbar = plt.colorbar()
             # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
             # cbar.set_ticks(list(np.linspace(9, 19, 11)))
@@ -767,7 +767,7 @@ def main():
             plt.xlabel("$m_{\chi}$ [GeV]")
             # plt.yscale("log")
             plt.xscale("log")
-            plt.savefig("Ilie4_700_beta.pdf")
+            plt.savefig("Ilie4_700_gamma.pdf")
             plt.clf()
 
         if args.G311:
