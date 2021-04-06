@@ -32,7 +32,8 @@ These indices can be found inside the `profiles.index` file.
 
 The current command line arguments are:
 ```
-usage: evap_snapshot.py [-h] [-D DIREC] [-p PROFILE] [-T] [-t] [-V] [-v] [-n]
+usage: DM_evap_MESA.py [-h] [-D DIREC] [-p PROFILE] [-T TCHIMCHI] [-M] [-P] [-e]
+                       [-R] [-H]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -40,10 +41,15 @@ optional arguments:
                         directory containing MESA profile and history files
   -p PROFILE, --profile PROFILE
                         index of the profile to use
-  -T, --TchiMchi        solve for and plot DM temperature vs DM mass
+  -T TCHIMCHI, --TchiMchi TCHIMCHI
+                        name of csv file to store T_chi data in after solving
+                        with Eq. 4.10 from Spergel and Press 1985
   -M, --MESA            plot stellar parameters from MESA
   -P, --poly            plot stellar parameters for N=3 polytope
   -e, --evap            plot DM evap rate from MESA data files
+  -R, --G311            plot Gould 3.11 equation
+  -H, --heatmap         plot heatmaps for alpha, beta, and gamma
+usage: evap_snapshot.py [-h] [-D DIREC] [-p PROFILE] [-T] [-t] [-V] [-v] [-n]
 ```
 These can be printed with `./DM_evap_MESA.py -h`.
 

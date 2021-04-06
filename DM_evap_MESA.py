@@ -102,7 +102,6 @@ def R311(r, T_chi, m_chi, sigma):
     b18 = mu(m_chi) * alpha('+', r, m_chi, v_c(r), v_esc(r)) / (2*T(r)*mu(m_chi)/T_chi)
     b19 = np.exp(-1 * (m_chi* v_chi(r, m_chi, T_chi)**2)/(2*T_chi) * alpha('+', r, m_chi, v_c(r), v_esc(r))**2)
     b20 = mu(m_chi) * alpha('-', r, m_chi, v_c(r), v_esc(r)) / (2*T(r)*mu(m_chi)/T_chi)
-    # print("shell scattering rate is = ", a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20))
     return a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20)
 
 def R311_2(r, T_chi, m_chi, sigma):
@@ -163,7 +162,7 @@ def R39_integrand(w, r, T_chi, m_chi, sigma):
 
 def R39(r, T_chi, m_chi, sigma):
     '''Eq. 3.9 from Goulde 1987'''
-    return quad(R39_integrand, 0, np.inf, args=(r, T_chi, m_chi, sigma))[0]
+    return quad(R39_integrand, 0, np.inf, args=(r, T_chi, m_chi, sigma), limit=1000)[0]
 
 def v_chi(r, m_chi, T_chi):
     '''DM velocity assuming an isothermal dist'''
@@ -284,7 +283,7 @@ def phi_integrand(r):
 def phi(r):
     ''' calculate potential from acceleration given by mesa'''
     # TODO: swap with polytrope
-    return quad(phi_integrand, 0, r)[0]
+    return quad(phi_integrand, 0, r, limit=1000)[0]
 
 def phi2_integrand(r):
     '''integrand for the phi2() function'''
@@ -292,7 +291,7 @@ def phi2_integrand(r):
 
 def phi2(r):
     ''' calculate potential from acceleration at radius r given by mesa'''
-    return quad(phi2_integrand, 0, r)[0]
+    return quad(phi2_integrand, 0, r, limit=1000)[0]
 
 def phi_quick(r):
     '''uses an interpolation for the gravitational potential which is faster than taking the integrals everytime'''
@@ -311,14 +310,14 @@ def mass_enc(r):
 def SP85_EQ410_integrand(r, T_chi, m_chi):
     '''the integrand that SP85_EQ410() will evaluate'''
     t1 = n_p(r)
-    t2 = math.sqrt(m_p* T_chi + m_chi * T(r)/(m_chi*m_p))
-    t3 = (T(r) - T_chi)
-    t4 = math.exp((-1*m_chi*phi_quick(r))/(k_cgs*T_chi))
+    t2 = np.sqrt((m_p* T_chi + m_chi * T(r)) / (m_chi*m_p))
+    t3 = T(r) - T_chi
+    t4 = np.exp((-1 * m_chi * phi_quick(r))/(k_cgs * T_chi))
     return t1 * t2 * t3 * t4 * r**2
 
 def SP85_EQ410(T_chi, m_chi, R_star):
     ''' uses MESA data in arrays, phi_mesa, n_mesa, prof.temperature, prof.radius_cm to evaluate the integral in EQ. 4.10 from SP85'''
-    return quad(SP85_EQ410_integrand, 0, R_star, args=(T_chi, m_chi), limit=500)[0]
+    return quad(SP85_EQ410_integrand, 0, R_star, args=(T_chi, m_chi), limit=1000)[0]
 
 def normfactor(r, m_chi, T_chi):
     '''normalization factor'''
@@ -338,7 +337,7 @@ def evap_rate_integrand(r, T_chi, m_chi, sigma):
 
 def evap_rate(T_chi, m_chi, sigma):
     '''evaporation rate of DM for the whole star'''
-    return quad(evap_rate_integrand, 0, R_star_cgs, args=(T_chi, m_chi, sigma))[0] * quad(n_chi, 0, R_star_cgs, args=(T_chi, m_chi))[0]
+    return quad(evap_rate_integrand, 0, R_star_cgs, args=(T_chi, m_chi, sigma))[0] * quad(n_chi, 0, R_star_cgs, args=(T_chi, m_chi), limit=1000)[0]
 
 def read_in_T_chi(name):
     '''reads T_chi vs M_chi data from CSV files'''
@@ -355,14 +354,14 @@ def read_in_T_chi(name):
     T_chi_fit = interp(m_chi_csv, T_chi_csv)
     return (m_chi_csv, T_chi_csv, T_chi_fit)
 
-def solve_T_chi(m_chi_sample):
+def solve_T_chi(m_chi_sample, name):
     '''solves T_chi in the SP85 equation 4.10 using fsolve'''
     m_chi_sample_cgs = []
     for i in range(len(m_chi_sample)):
         m_chi_sample_cgs.append(g_per_GeV * m_chi_sample[i])
 
     # use central temp to guess DM temp
-    T_chi_guess = prof.temperature[-1]
+    T_chi_guess = T(0)
     T_chi_sample = []
 
     # do MESA calcs and run thru all massses
@@ -371,6 +370,13 @@ def solve_T_chi(m_chi_sample):
         m_chi = m_chi_sample_cgs[i]
         R_star = R_star_cgs
         T_chi_sample.append(fsolve(SP85_EQ410, T_chi_guess, args=(m_chi, R_star))[0])
+
+    # write to CSV
+    m_chi_sample = np.asarray(m_chi_sample)
+    T_chi_sample = np.asarray(T_chi_sample)
+    output = np.column_stack((m_chi_sample.flatten(), T_chi_sample.flatten()))
+    np.savetxt(name + '.csv',output,delimiter=',')
+
     return T_chi_sample
 
 def assign_const():
@@ -509,7 +515,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-D", "--direc", help="directory containing MESA profile and history files")
     parser.add_argument("-p", "--profile", help="index of the profile to use", type=int)
-    parser.add_argument("-T", "--TchiMchi", help="solve for and plot DM temperature vs DM mass", action='store_true')
+    parser.add_argument("-T", "--TchiMchi", help="name of csv file to store T_chi data in after solving with Eq. 4.10 from Spergel and Press 1985", type=str)
     parser.add_argument("-M", "--MESA", help="plot stellar parameters from MESA", action='store_true')
     parser.add_argument("-P", "--poly", help="plot stellar parameters for N=3 polytope", action='store_true')
     parser.add_argument("-e", "--evap", help="plot DM evap rate from MESA data files", action='store_true')
@@ -550,13 +556,6 @@ def main():
         # create interpolation functions from MESA's arrays 
         mesa_interp(prof)
 
-        if args.TchiMchi:
-            # use fsolve and SP85 to find the DM temperature
-            solve_T_chi(m_chi_sample)
-        else:
-            # read in DM temperature vs DM mass from CSV file 
-            (m_chi_csv, T_chi_csv, T_chi_fit) = read_in_T_chi('TM4.csv')
-
         # ASSIGN ARRAYS FOR PLOTTING AND SAMPLING 
         # DM mass in GeV
         m_chi_sample = np.logspace(-6, 5, 100)
@@ -575,6 +574,45 @@ def main():
         for i in range(len(r)):
             phi_range.append(phi(r[i]))
         phi_fit = interp(r, phi_range)
+
+        # solve for temp with SP85
+        if args.TchiMchi:
+            # use fsolve and SP85 to find the DM temperature
+            name = args.TchiMchi
+            T_chi_sample = solve_T_chi(m_chi_sample, name)
+
+            # calc tau and mu
+            tau = []
+            mu = []
+            for i in range(len(m_chi_sample)):
+                tau.append(T_chi_sample[i]/T(0))
+                mu.append(m_chi_sample_cgs[i]/m_p)
+
+            # plot DM temp vs mass 
+            plt.plot(m_chi_sample, T_chi_sample, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
+            plt.title("DM Temperature in a MESA star")
+            plt.legend()
+            plt.yscale("log")
+            plt.xscale("log")
+            plt.xlabel('$m_{\chi}$ [GeV]')
+            plt.ylabel('$T$ [K]')
+            plt.savefig("Ilie4_DMT.pdf")
+            plt.clf()
+
+            # plot DM temp vs mass 
+            plt.plot(mu, tau, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
+            plt.title("DM Temperature in a MESA star")
+            plt.legend()
+            plt.yscale("log")
+            plt.xscale("log")
+            plt.xlabel('$\mu$')
+            plt.ylabel('$\tau$')
+            plt.savefig("Ilie4_DMt.pdf")
+            plt.clf()
+        else:
+            # read in DM temperature vs DM mass from CSV file 
+            (m_chi_csv, T_chi_csv, T_chi_fit) = read_in_T_chi('TM4.csv')
+
 
         if args.MESA:
             T_sample = []
@@ -781,8 +819,8 @@ def main():
             plt.savefig("Ilie4_700_gamma.pdf")
             plt.clf()
 
+        # NOW CALC EVAP RATES
         if args.G311:
-            # NOW CALC EVAP RATES
             R311_sample = []
             norm = []
             for i in range(len(r)):
@@ -813,8 +851,8 @@ def main():
             plt.show()
             plt.clf()
 
+        # NOW CALC EVAP RATES
         if args.evap:
-            # NOW CALC EVAP RATES
             evap_sample = []
             for i in range(len(m_chi_csv)):
                 print("####################################################")
@@ -839,8 +877,8 @@ def main():
             plt.ylabel('$E$ [$s^{-1}$]')
             plt.yscale("log")
             plt.xscale("log")
-            plt.savefig("Ilie4_700_E.pdf")
-            plt.show()
+            plt.savefig("Ilie4_500_E.pdf")
+            # plt.show()
             plt.clf()
 
 ###########
