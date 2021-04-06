@@ -82,7 +82,7 @@ def interp(x, y):
 def R311(r, T_chi, m_chi, sigma):
     '''Eq. 3.11 from Goulde 1987, normalized evap. rate'''
     #TODO numerical integration over phase space
-    a1 = (2/np.pi)*(2*T(r)/m_chi)**(1/2)
+    a1 = (2/np.pi)*(2*k_cgs*T(r)/m_chi)**(1/2)
     a2 = (T(r)/T_chi)**(3/2)* sigma * n_p(r) * n_chi(r, T_chi, m_chi)
     b3 = np.exp(-1*(mu_plus(mu(m_chi))/xi(r, m_chi, T_chi))**2 *(m_chi*v_esc(r)**2/(2*T_chi)))
     c4 = mu(m_chi) * mu_minus(mu(m_chi)) / (T(r)*mu(m_chi)*xi(r, m_chi, T_chi)/T_chi)
@@ -107,11 +107,11 @@ def R311(r, T_chi, m_chi, sigma):
 def R311_2(r, T_chi, m_chi, sigma):
     '''Eq. 3.11 from Goulde 1987, normalized evap. rate'''
     #TODO numerical integration over phase space
-    a1 = (2/np.pi) * np.sqrt((2*T(r))/(m_chi))
+    a1 = (2/np.pi) * np.sqrt((2*k_cgs*T(r))/(m_chi))
     a2 = (T(r)/T_chi)**(1.5) * sigma * n_p(r) * n_chi(r, T_chi, m_chi)
     b3 = np.exp(-1* (mu_plus(mu(m_chi)) / xi_2(r, m_chi, T_chi))**2 * (E_e(m_chi, v_esc(r))/T_chi))
     c4 = (mu(m_chi) * mu_minus(mu(m_chi))) / (nu(r, m_chi, T_chi) * xi_2(r, m_chi, T_chi))
-    d5 = xi_2(r, m_chi, T_chi)**2 * nu(r, m_chi, T_chi)
+    d5 = xi_2(r, m_chi, T_chi)**2 / nu(r, m_chi, T_chi)
     d6 = (mu_plus(mu(m_chi)) * mu_minus(mu(m_chi))) / (mu(m_chi))
     c7 = (mu_plus(mu(m_chi))**3 )/( xi_2(r, m_chi, T_chi) * (nu(r, m_chi, T_chi) - mu(m_chi)))
     b8 = chi(gamma_2('-', r, m_chi, T_chi, v_c(r), v_esc(r)), gamma_2('+', r, m_chi, T_chi, v_c(r), v_esc(r)))
@@ -131,6 +131,7 @@ def R311_2(r, T_chi, m_chi, sigma):
 
 def Omegaplus37(r, w, T_chi, m_chi, sigma):
     '''Eq. 3.7 from Goulde 1987'''
+    #TODO: boltzman constant
     a1 = (2*T(r))/(2*m_p*np.pi**(1/2))
     a2 = 1/(mu(m_chi)**2)
     a3 = sigma*n_p(r)/w
@@ -218,7 +219,7 @@ def E_c(m_chi, w):
 
 def beta(pm, r, m_chi, w, v):
     '''made up goulde function'''
-    ###TDOD: boltzmand constant???
+    ###TODD: boltzmand constant???
     if (pm == '+'):
         val = (m_p/(2 * k_cgs * T(r)))**(1/2) * (mu_minus(mu(m_chi)) * v + mu_plus(mu(m_chi)) * w)
     if (pm == '-'):
@@ -236,7 +237,7 @@ def gamma(pm, r, m_chi, T_chi):
 
 def xi(r, m_chi, T_chi):
     '''not the polytope xi!!!!!!, just a made up goulde function'''
-    ###TODO: invalid root???
+    ###TODO: wrong
     return np.sqrt(mu_minus(mu(m_chi))**2 + T(r)/(T_chi*mu(m_chi)))
 
 def chi(a, b):
@@ -767,11 +768,11 @@ def main():
             ### DEBUGGING
             print(
                 "alpha = ",
-                alpha("+", 10**11, g_per_GeV*10**(-2), 0.5*v_esc(10**11), v_esc(10**11)),
+                alpha("+", 2*10**11, g_per_GeV*10**(3), 0.5*v_esc(2*10**11), v_esc(2*10**11)),
                 "beta = ",
-                beta("+", 10**11, g_per_GeV*10**(-2), 0.5*v_esc(10**11), v_esc(10**11)),
+                beta("+", 2*10**11, g_per_GeV*10**(3), 0.5*v_esc(2*10**11), v_esc(2*10**11)),
                 "gamma = ",
-                gamma_2("+", 10**11, g_per_GeV*10**(-2), T_chi_fit(g_per_GeV*10**(-2)), 0.5*v_esc(10**11), v_esc(10**11))
+                gamma_2("+", 2*10**11, g_per_GeV*10**(3), T_chi_fit(g_per_GeV*10**(3)), 0.5*v_esc(2*10**11), v_esc(2*10**11))
             )
 
             # alpha
