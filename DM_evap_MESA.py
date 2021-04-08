@@ -827,7 +827,7 @@ def main():
             for i in range(len(r)):
                 R311_sample.append(R311(r[i], T_chi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma))
                 norm.append(normfactor(r[i], 10**(-2)*g_per_GeV, T_chi_fit(10**(-2)*g_per_GeV)))
-            print(R311_sample)
+            # print(R311_sample)
 
             # PLOT
             plt.plot(r, R311_sample, ls = '-', linewidth = 2, label=mesa_lab)
@@ -835,9 +835,9 @@ def main():
             plt.legend()
             plt.xlabel('$r$ [cm]')
             plt.ylabel('$R(w|v)$ [???]')
-            plt.yscale("log")
+            # plt.yscale("log")
             # plt.xscale("log")
-            plt.savefig("Ilie4_700_R.pdf")
+            plt.savefig("Ilie4_800_R.png", dpi=400)
             # plt.show()
             plt.clf()
 
@@ -848,8 +848,8 @@ def main():
             plt.ylabel('')
             plt.yscale("log")
             # plt.xscale("log")
-            # plt.savefig("Ilie4_700_R.pdf")
-            plt.show()
+            plt.savefig("Ilie4_800_norm.png", dpi=400)
+            # plt.show()
             plt.clf()
 
         # NOW CALC EVAP RATES
