@@ -171,6 +171,10 @@ def R311_2(r, T_chi, m_chi, sigma):
     # print( a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20))
     return a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20)
 
+def R_gould_approx(m_chi, r, sigma, Rstar):
+    R_val = 2*np.pi**(-1/2)*sigma* n_p(r) * np.sqrt((2*k_cgs*T(r))/(m_chi)) * v_esc(Rstar) * np.exp(-1*(v_esc(r)/v_chi(r))**2 )
+    return R_val
+
 def Omegaplus37(r, w, T_chi, m_chi, sigma):
     '''Eq. 3.7 from Goulde 1987'''
     #TODO: boltzman constant
@@ -217,7 +221,6 @@ def n_chi(r, T_chi, m_chi):
 
 def alpha(pm, r, m_chi, w, v):
     '''made up goulde function'''
-    ###TDOD: boltzmand constant???
     if (pm == '+'):
         val = (m_p/(2 * k_cgs * T(r)))**(1/2) * (mu_plus(mu(m_chi)) * v + mu_minus(mu(m_chi)) * w)
     if (pm == '-'):
@@ -226,7 +229,6 @@ def alpha(pm, r, m_chi, w, v):
 
 def gamma_2(pm, r, m_chi, T_chi, w, v):
     '''made up goulde function'''
-    ###TDOD: boltzmand constant???
     if (pm == '+'):
         val = np.sqrt(m_p / (2 * k_cgs * T(r))) * (grho(r, m_chi, T_chi)*v + xi_2(r, m_chi, T_chi)*w)
     if (pm == '-'):
@@ -307,10 +309,17 @@ def v_esc(r):
     #TDOD: prove this
     return np.sqrt(2*(G_cgs * M_star_cgs/R_star_cgs + (phi_quick(R_star_cgs) - phi_quick(r))))
 
+# def T(r):
+#     '''temperature interpolation function that is fit to a MESA data array'''
+#     # TODO: swap with polytrope
+#     return T_fit(r)
+
+# TODO: Temp poly dunctions
 def T(r):
-    '''temperature interpolation function that is fit to a MESA data array'''
-    # TODO: swap with polytrope
-    return T_fit(r)
+    '''temperature from polytrope'''
+    xi = 6.89*(r / star.get_radius_cm())
+    return star.core_temp * theta(xi)
+
 
 def n_p(r):
     '''number density interpolation function that uses fits from a MESA data array'''
@@ -321,7 +330,7 @@ def phi_integrand(r):
     '''integrand for the phi() function'''
     #TODO: integrate over mass to calculate acceleration without using the acc parameter from MESA
     #TODO: integrate 0->r
-    return 0.5*grav_fit(r)
+    return 0.5* grav_fit(r)
 
 def phi(r):
     ''' calculate potential from acceleration given by mesa'''
@@ -582,6 +591,8 @@ def main():
 
     if args.poly:
         # polytrope definitions
+        global star
+        star = PopIIIStar(100, 10**0.6147, 10**6.1470, 1.176e8, 32.3, 10**6)
         M100 = PopIIIStar(100, 10**0.6147, 10**6.1470, 1.176e8, 32.3, 10**6)
         M300 = PopIIIStar(300, 10**0.8697, 10**6.8172, 1.245e8, 18.8, 10**6)
         M1000 = PopIIIStar(1000, 10**1.1090, 10**7.3047, 1.307e8, 10.49, 10**6)
@@ -639,7 +650,7 @@ def main():
             plt.xscale("log")
             plt.xlabel('$m_{\chi}$ [GeV]')
             plt.ylabel('$T$ [K]')
-            plt.savefig("Ilie4_DMT.pdf")
+            plt.savefig("Ilie6_400_DMT.pdf")
             plt.clf()
 
             # plot DM temp vs mass 
@@ -650,11 +661,11 @@ def main():
             plt.xscale("log")
             plt.xlabel('$\mu$')
             plt.ylabel('$\tau$')
-            plt.savefig("Ilie4_DMt.pdf")
+            plt.savefig("Ilie6_400_mutau.pdf")
             plt.clf()
         else:
             # read in DM temperature vs DM mass from CSV file 
-            file = "TM4_" + str(args.profile) + ".csv"
+            file = "TM" + str(4) +"_" + str(args.profile) + ".csv"
             (m_chi_csv, T_chi_csv, T_chi_fit) = read_in_T_chi(file)
 
 
@@ -803,7 +814,7 @@ def main():
             gamma_sample = np.zeros([len(r), len(m_chi_sample)])
             for i in range(len(r)):
                 for j in range(len(m_chi_sample)):
-                    print("Calculating alpha, i = ", i, "/", len(r), ", j = ", j, "/", len(m_chi_sample_cgs))
+                    # print("Calculating alpha, i = ", i, "/", len(r), ", j = ", j, "/", len(m_chi_sample_cgs))
                     alpha_sample[i,j] = alpha("+", r[i], m_chi_sample_cgs[j], 0.5*v_esc(r[i]), v_esc(r[i]))
                     beta_sample[i,j] = beta("+", r[i], m_chi_sample_cgs[j], 0.5*v_esc(r[i]), v_esc(r[i]))
                     gamma_sample[i,j] = gamma_2("+", r[i], m_chi_sample_cgs[j], T_chi_fit(m_chi_sample_cgs[j]), 0.5*v_esc(r[i]), v_esc(r[i]))
@@ -811,11 +822,11 @@ def main():
             ### DEBUGGING
             print(
                 "alpha = ",
-                alpha("+", 2*10**11, g_per_GeV*10**(3), 0.5*v_esc(2*10**11), v_esc(2*10**11)),
+                alpha("+", 1*10**11, g_per_GeV*10**(3), 0.5*v_esc(1*10**11), v_esc(1*10**11)),
                 "beta = ",
-                beta("+", 2*10**11, g_per_GeV*10**(3), 0.5*v_esc(2*10**11), v_esc(2*10**11)),
+                beta("+", 1*10**11, g_per_GeV*10**(3), 0.5*v_esc(1*10**11), v_esc(1*10**11)),
                 "gamma = ",
-                gamma_2("+", 2*10**11, g_per_GeV*10**(3), T_chi_fit(g_per_GeV*10**(3)), 0.5*v_esc(2*10**11), v_esc(2*10**11))
+                gamma_2("+", 1*10**11, g_per_GeV*10**(3), T_chi_fit(g_per_GeV*10**(3)), 0.5*v_esc(1*10**11), v_esc(1*10**11))
             )
 
             # alpha
@@ -875,36 +886,41 @@ def main():
             tsame = []
             rate = []
             for i in range(len(r)):
-                if abs(T(r[i]) - T_chi_fit(10**(-2)*g_per_GeV))/T(r[i]) < 0.01:
-                    tsame.append(r[i])
                 R310_sample.append(R310(r[i], T_chi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma))
                 R311_sample.append(R311_2(r[i], T_chi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma))
                 norm.append(normfactor(r[i], 10**(-2)*g_per_GeV, T_chi_fit(10**(-2)*g_per_GeV)))
-                rate.append(R310_sample[i]/norm[i])
+                if abs(T(r[i]) - T_chi_fit(10**(-2)*g_per_GeV))/T(r[i]) < 0.01:
+                    tsame.append(r[i])
+                if abs(T(r[i]) - T_chi_fit(10**(-2)*g_per_GeV))/T(r[i]) < 0.2:
+                    rate.append(R310_sample[i])
+                else:
+                    rate.append(R311_sample[i])
+
+
             # print(R311_sample)
 
             # PLOT
             plt.plot(r, rate, ls = '-', linewidth = 2, label=mesa_lab)
             plt.axvline(x=tsame[0], label="$T_{\chi} = T(r)$", c="#8A2BE2", linewidth=2)
-            plt.title("MESA Gould Eq. 3.10 $100 M_{\\odot}$ (Windhorst)")
+            plt.title("MESA Gould Eq. 3.10 $1000 M_{\\odot}$ (Windhorst)")
             plt.legend()
             plt.xlabel('$r$ [cm]')
             plt.ylabel('$R(w|v)$ [???]')
             # plt.ylim(0, 10**(-7))
             # plt.yscale("log")
             # plt.xscale("log")
-            plt.savefig("Ilie4_725_R.png", dpi=400)
+            plt.savefig("Ilie6_" + str(args.profile) + "_R.png", dpi=400)
             # plt.show()
             plt.clf()
 
             plt.plot(r, norm, ls = '-', linewidth = 2, label=mesa_lab)
-            plt.title("MESA Gould Normalization Factor $100 M_{\\odot}$ (Windhorst)")
+            plt.title("MESA Gould Normalization Factor $1000 M_{\\odot}$ (Windhorst)")
             plt.legend()
             plt.xlabel('$r$ [cm]')
             plt.ylabel('')
             plt.yscale("log")
             # plt.xscale("log")
-            plt.savefig("Ilie4_725_norm.png", dpi=400)
+            plt.savefig("Ilie6_" + str(args.profile) + "_norm.png", dpi=400)
             # plt.show()
             plt.clf()
 
