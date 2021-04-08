@@ -4,3 +4,4 @@
 # *.csv
 *.pdf
 !plots/*
+.ipynb_checkpoints
