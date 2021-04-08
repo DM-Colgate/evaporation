@@ -22,11 +22,11 @@ Execute from the command line, in the directory that contains MESA log directori
     └── profile31.index
 ```
 
-Specify the directory using the `-D` flag, then the index of profile file you wish to plot with the `-p` flag:
+Specify the directory using the `-D` flag, then the index of profile file you wish to use with the `-p` flag:
 
 ```./DM_evap_MESA.py -D mesa_1 -p 700```.
 
-Finally, pass the `-T`, `-t`, `-V`, or `-n` flags to specify which plot (or plots) to show.
+The CSV files `TM4_***.CSV` are data files containing DM temperature verus DM mass. These are calculated for the Ilie4 star. The way it is set up now, the program will automatically pick the correct profile based on the profile index pass it. As of now you still have to manually change the `TM4` to something else if you wish to calculate for another star.
 
 These indices can be found inside the `profiles.index` file.
 

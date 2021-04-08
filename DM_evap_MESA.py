@@ -104,6 +104,27 @@ def R311(r, T_chi, m_chi, sigma):
     b20 = mu(m_chi) * alpha('-', r, m_chi, v_c(r), v_esc(r)) / (2*T(r)*mu(m_chi)/T_chi)
     return a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20)
 
+def R310(r, T_chi, m_chi, sigma):
+    '''Eq. 3.10 from Goulde 1987, normalized evap. rate'''
+    a1 = (2/np.pi) * np.sqrt((2*k_cgs*T(r))/(m_chi))
+    a2 = sigma * n_p(r) * n_chi(r, T_chi, m_chi)
+    b3 = np.exp(-1*E_e(m_chi, v_esc(r))/ T(r))
+    c4 = -1 * beta('+', r, m_chi, v_c(r), v_esc(r)) * beta('-', r, m_chi, v_c(r), v_esc(r))
+    c5 = 1/(2*mu(m_chi))
+    b6 = chi(beta('-', r, m_chi, v_c(r), v_esc(r)), beta('+', r, m_chi, v_c(r), v_esc(r)))
+    b7 = np.exp(-1*E_c(m_chi, v_esc(r))/ T(r))
+    c8 = alpha('+', r, m_chi, v_c(r), v_esc(r)) * alpha('-', r, m_chi, v_c(r), v_esc(r))
+    c9 = 1/(2*mu(m_chi))
+    b10 = chi(alpha('-', r, m_chi, v_c(r), v_esc(r)), alpha('+', r, m_chi, v_c(r), v_esc(r)))
+    ### TODO: overflow in B11???
+    b11 = np.exp( (-1*E_c(m_chi, v_esc(r))/ T_chi) +  alpha('-', r, m_chi, v_c(r), v_esc(r))**2 )
+    b12 = np.sqrt((m_chi)/(2*k_cgs*T(r)))
+    b13 = (v_esc(r) - v_c(r))/ 2
+    b14 = np.exp( (-1*E_c(m_chi, v_esc(r))/ T_chi) +  alpha('+', r, m_chi, v_c(r), v_esc(r))**2 )
+    b15 = np.sqrt((m_chi)/(2*k_cgs*T(r)))
+    b16 = (v_esc(r) + v_c(r))/ 2
+    return a1*a2*(b3*(c4 - c5)*b6 + b7*(c8-c9)*b10 - b11*b12*b13 + b14*b15*b16)
+
 def R311_2(r, T_chi, m_chi, sigma):
     '''Eq. 3.11 from Goulde 1987, normalized evap. rate'''
     #TODO numerical integration over phase space
@@ -127,6 +148,27 @@ def R311_2(r, T_chi, m_chi, sigma):
     b18 = mu(m_chi)/(2* nu(r, m_chi, T_chi)) * alpha('+',  r, m_chi, v_c(r), v_esc(r))
     b19 = np.exp(-1 * (E_c(m_chi, v_c(r))/T_chi + alpha('+',  r, m_chi, v_c(r), v_esc(r))**2))
     b20 = mu(m_chi)/(2* nu(r, m_chi, T_chi)) * alpha('-',  r, m_chi, v_c(r), v_esc(r))
+    # print("a1 = ", a1)
+    # print("a2 = ", a2)
+    # print("b3 = ", b3)
+    # print("c4 = ", c4)
+    # print("d5 = ", d5)
+    # print("d6 = ", d6)
+    # print("c7 = ", c7)
+    # print("b8 = ", b8)
+    # print("b9 = ", b9)
+    # print("c10 = ", c10)
+    # print("c11 = ", c11)
+    # print("c12 = ", c12)
+    # print("b13 = ", b13)
+    # print("b14 = ", b14)
+    # print("b15 = ", b15)
+    # print("b16 = ", b16)
+    # print("b17 = ", b17)
+    # print("b18 = ", b18)
+    # print("b19 = ", b19)
+    # print("b20 = ", b20)
+    # print( a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20))
     return a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20)
 
 def Omegaplus37(r, w, T_chi, m_chi, sigma):
@@ -279,7 +321,7 @@ def phi_integrand(r):
     '''integrand for the phi() function'''
     #TODO: integrate over mass to calculate acceleration without using the acc parameter from MESA
     #TODO: integrate 0->r
-    return grav_fit(r)
+    return 0.5*grav_fit(r)
 
 def phi(r):
     ''' calculate potential from acceleration given by mesa'''
@@ -612,7 +654,8 @@ def main():
             plt.clf()
         else:
             # read in DM temperature vs DM mass from CSV file 
-            (m_chi_csv, T_chi_csv, T_chi_fit) = read_in_T_chi('TM4.csv')
+            file = "TM4_" + str(args.profile) + ".csv"
+            (m_chi_csv, T_chi_csv, T_chi_fit) = read_in_T_chi(file)
 
 
         if args.MESA:
@@ -709,7 +752,7 @@ def main():
             plt.legend()
             plt.xlabel("$r$ [cm]")
             plt.ylabel("$\\rho$ [$g/cm^3$]")
-            plt.savefig("Ilie4_700_density.pdf")
+            plt.savefig("Ilie4_700_density.png", dpi=400)
             plt.clf()
 
             # PLOT temp
@@ -719,7 +762,7 @@ def main():
             plt.legend()
             plt.xlabel('$r$ [cm]')
             plt.ylabel('$T$ [K]')
-            plt.savefig("Ilie4_700_temp.pdf")
+            plt.savefig("Ilie4_700_temp.png", dpi=400)
             plt.clf()
 
             # PLOT n_p
@@ -731,7 +774,7 @@ def main():
             plt.xscale("log")
             plt.xlabel("$r$ [cm]")
             plt.ylabel("$n_p$ [$1/cm^3$]")
-            plt.savefig("Ilie4_700_np.pdf")
+            plt.savefig("Ilie4_700_np.png", dpi=400)
             plt.clf()
 
             # PLOT v_esc
@@ -741,7 +784,7 @@ def main():
             plt.legend()
             plt.xlabel("$r$ [cm]")
             plt.ylabel("$v_{esc}$ [cm/s]")
-            plt.savefig("Ilie4_700_vesc.pdf")
+            plt.savefig("Ilie4_700_vesc.png", dpi=400)
             plt.clf()
 
             # PLOT gravitation pot
@@ -751,7 +794,7 @@ def main():
             plt.legend()
             plt.xlabel("$r$ [cm]")
             plt.ylabel("$\phi$ [ergs/g]")
-            plt.savefig("Ilie4_700_phi.pdf")
+            plt.savefig("Ilie4_700_phi.png", dpi=400)
             plt.clf()
 
         if args.heatmap:
@@ -822,22 +865,35 @@ def main():
 
         # NOW CALC EVAP RATES
         if args.G311:
+            # DEBUG
+            # R311_2(0.28*10**11, T_chi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma)
+            # R311_2(0.78*10**11, T_chi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma)
+
             R311_sample = []
+            R310_sample = []
             norm = []
+            tsame = []
+            rate = []
             for i in range(len(r)):
-                R311_sample.append(R311(r[i], T_chi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma))
+                if abs(T(r[i]) - T_chi_fit(10**(-2)*g_per_GeV))/T(r[i]) < 0.01:
+                    tsame.append(r[i])
+                R310_sample.append(R310(r[i], T_chi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma))
+                R311_sample.append(R311_2(r[i], T_chi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma))
                 norm.append(normfactor(r[i], 10**(-2)*g_per_GeV, T_chi_fit(10**(-2)*g_per_GeV)))
+                rate.append(R310_sample[i]/norm[i])
             # print(R311_sample)
 
             # PLOT
-            plt.plot(r, R311_sample, ls = '-', linewidth = 2, label=mesa_lab)
-            plt.title("MESA Gould Eq. 3.11 $100 M_{\\odot}$ (Windhorst)")
+            plt.plot(r, rate, ls = '-', linewidth = 2, label=mesa_lab)
+            plt.axvline(x=tsame[0], label="$T_{\chi} = T(r)$", c="#8A2BE2", linewidth=2)
+            plt.title("MESA Gould Eq. 3.10 $100 M_{\\odot}$ (Windhorst)")
             plt.legend()
             plt.xlabel('$r$ [cm]')
             plt.ylabel('$R(w|v)$ [???]')
+            # plt.ylim(0, 10**(-7))
             # plt.yscale("log")
             # plt.xscale("log")
-            plt.savefig("Ilie4_800_R.png", dpi=400)
+            plt.savefig("Ilie4_725_R.png", dpi=400)
             # plt.show()
             plt.clf()
 
@@ -848,7 +904,7 @@ def main():
             plt.ylabel('')
             plt.yscale("log")
             # plt.xscale("log")
-            plt.savefig("Ilie4_800_norm.png", dpi=400)
+            plt.savefig("Ilie4_725_norm.png", dpi=400)
             # plt.show()
             plt.clf()
 
