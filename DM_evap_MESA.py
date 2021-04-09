@@ -120,18 +120,18 @@ def R310(r, T_chi, m_chi, sigma):
     b10 = chi(alpha('-', r, m_chi, v_c(r), v_esc(r)), alpha('+', r, m_chi, v_c(r), v_esc(r)))
     b11 = np.exp( D( (-1*E_c(m_chi, v_esc(r))/ T_chi) +  alpha('-', r, m_chi, v_c(r), v_esc(r))**2 ))
     ### TODO: overflow in B11???
-    print("b11 =",b11)
-    print("alpha- =", alpha('-', r, m_chi, v_c(r), v_esc(r)) )
+    # print("b11 =",b11)
+    # print("alpha- =", alpha('-', r, m_chi, v_c(r), v_esc(r)) )
     # print("term inside exp =" ,(-1*E_c(m_chi, v_esc(r))/ T_chi) +  alpha('-', r, m_chi, v_c(r), v_esc(r))**2)
     # print("left term:", -1*E_c(m_chi, v_esc(r))/ T_chi)
     # print("alpha^2", alpha('-', r, m_chi, v_c(r), v_esc(r))**2)
     b12 = np.sqrt((m_chi)/(2*k_cgs*T(r)))
     b13 = (v_esc(r) - v_c(r))/ 2
     # TODO overflow error in b14
-    print(D( (-1*E_c(m_chi, v_esc(r))/ T_chi) +  alpha('+', r, m_chi, v_c(r), v_esc(r))**2 ))
-    print("alpha+ =", alpha('+', r, m_chi, v_c(r), v_esc(r)) )
+    # print(D( (-1*E_c(m_chi, v_esc(r))/ T_chi) +  alpha('+', r, m_chi, v_c(r), v_esc(r))**2 ))
+    # print("alpha+ =", alpha('+', r, m_chi, v_c(r), v_esc(r)) )
     b14 = np.exp( D( (-1*E_c(m_chi, v_esc(r))/ T_chi) +  alpha('+', r, m_chi, v_c(r), v_esc(r))**2 ))
-    print("b14 = ", b14)
+    # print("b14 = ", b14)
     b15 = np.sqrt((m_chi)/(2*k_cgs*T(r)))
     b16 = (v_esc(r) + v_c(r))/ 2
 
@@ -186,6 +186,33 @@ def R311_2(r, T_chi, m_chi, sigma):
     # print( a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20))
     return a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20)
 
+def R311_3(mx, xi, sigma, star):
+    #Central proton number density (cm^-3)
+    nc = polytrope3_rhoc(star)*0.75/1.6726e-24
+    kb = 1.380649e-16 #Boltzmann constant in cgs Units (erg/K)
+    T = (10**8) * theta(xi)
+    Tx = tau_fit(mx, star) * 10**8
+    mu_p = mu_plus_minus('+', mx)
+    mu_m = mu_plus_minus('-', mx)
+    nu = nu_gould(mx, xi, star)
+    xi_g = xi_gould(mx, xi, star)
+    Ee = E_e_gould(mx, xi, star)
+    Ec = E_c_gould(mx, xi, star)
+    g_p = gamma_gould('+', mx, xi, star)
+    g_m = gamma_gould('-', mx, xi, star)
+    a_p = alpha('+', mx, vesc_r_poly(xi, star), vesc_r_poly(xi, star), xi, star)
+    a_m = alpha('-', mx, vesc_r_poly(xi, star), vesc_r_poly(xi, star), xi, star)
+    b_p = beta('+', mx, vesc_r_poly(xi, star), vesc_r_poly(xi, star), xi, star)
+    b_m = beta('-', mx, vesc_r_poly(xi, star), vesc_r_poly(xi, star), xi, star)
+    R_pre = 2/np.pi * proton_speed(xi, star) * star.get_vesc_surf() * 1/np.sqrt(mu(mx)) * (T/Tx)**(3/2) * sigma * nc * eta_proton(xi)
+    term1 = np.exp(-(mu_p/xi_g)**2 * (Ee/(kb*Tx))) * (mu(mx)*mu_m/(nu*xi_g)*(xi_g**2/nu - mu_p*mu_m/mu(mx)) + mu_p**3/(xi_g*(nu-mu(mx))))*chi_func(g_m, g_p) 
+    term2 = np.exp(-Ec/(kb*Tx)) * mu(mx)/nu * ( a_p*a_m - 1/(2*mu(mx)) + mu_m**2*(1/mu(mx) - 1/nu) ) * chi_func(a_m, a_p)
+    term3 = np.exp(-Ec/(kb*Tx)) * np.exp(-(Ee-Ec)/(kb*T)) * mu_p**2/(nu - mu(mx)) * chi_func(b_m, b_p)
+    term4 = np.exp(-(Ec/(kb*Tx) + a_m**2)) * mu(mx)*a_p/(2*nu)
+    term5 = np.exp(-(Ec/(kb*Tx) + a_p**2)) * mu(mx)*a_m/(2*nu)
+    R_val = R_pre * (term1 + term2 - term3 - term4 + term5) * normalize_factor(mx, xi, star)
+    return R_val
+
 def R_gould_approx(m_chi, r, sigma, Rstar):
     R_val = 2*np.pi**(-1/2)*sigma* n_p(r) * np.sqrt((2*k_cgs*T(r))/(m_chi)) * v_esc(Rstar) * np.exp(-1*(v_esc(r)/v_chi(r))**2 )
     return R_val
@@ -230,18 +257,18 @@ def v_chi(r, m_chi, T_chi):
     '''DM velocity assuming an isothermal dist'''
     return np.sqrt(2*T_chi/m_chi)
 
-# def n_chi(r, T_chi, m_chi):
-#     '''normalized isotropic DM distribution using user supplied potential and DM temp (from MESA)'''
-#     return np.exp(-1.0*m_chi*phi_quick(r)/(k_cgs*T_chi))
+def n_chi(r, T_chi, m_chi):
+    '''normalized isotropic DM distribution using user supplied potential and DM temp (from MESA)'''
+    return np.exp(-1.0*m_chi*phi_quick(r)/(k_cgs*T_chi))
 
-# FAKE POLY
-def n_chi(r, Tx, mx): #Normalized
-    '''isotropic DM distribution using potential from n=3 polytrope'''
-    xi = 6.89*(r / star.get_radius_cm())
-    kb = 1.380649e-16 #Boltzmann constant in cgs Units (erg/K)
-    # numerical DM number density profile for each DM mass (normalized)
-    nx_xi_val = np.exp(-mx*phi_quick(r)/(kb*Tx)) 
-    return nx_xi_val
+# # FAKE POLY
+# def n_chi(r, Tx, mx): #Normalized
+#     '''isotropic DM distribution using potential from n=3 polytrope'''
+#     xi = 6.89*(r / star.get_radius_cm())
+#     kb = 1.380649e-16 #Boltzmann constant in cgs Units (erg/K)
+#     # numerical DM number density profile for each DM mass (normalized)
+#     nx_xi_val = np.exp(-mx*phi_quick(r)/(kb*Tx)) 
+#     return nx_xi_val
 
 def alpha(pm, r, m_chi, w, v):
     '''made up goulde function'''
@@ -261,7 +288,7 @@ def gamma_2(pm, r, m_chi, T_chi, w, v):
 
 def grho(r, m_chi, T_chi):
     '''made up goulde function'''
-    val =  (mu_plus(mu(m_chi)) * (mu_minus(mu(m_chi))))/ np.sqrt(xi_2(r, m_chi, T_chi))
+    val =  (mu_plus(mu(m_chi)) * (mu_minus(mu(m_chi))))/ xi_2(r, m_chi, T_chi)
     return val
 
 def xi_2(r, m_chi, T_chi):
@@ -328,42 +355,41 @@ def v_c(r):
     '''cutoff velocity for the boltzman distribution'''
     return v_esc(r)
 
-#def v_esc(r):
-#    '''escape velocity at an arbitray point in the star'''
-#    #TDOD: prove this
-#    return np.sqrt(2*(G_cgs * M_star_cgs/R_star_cgs + (phi_quick(R_star_cgs) - phi_quick(r))))
-
-# FAKE POLY
 def v_esc(r):
-    '''Escape velocity of n=3 polytrope at given radius (dimensionless xi)'''
-    G = 6.6743*10**(-8) # gravitational constant in cgs units
-    xi = 6.89*(r / star.get_radius_cm())
-    r1 = star.get_radius_cm()
-    vesc = np.sqrt( 2*G*star.get_mass_grams()/star.get_radius_cm() + 2*(phi_poly(r1, star) - phi_poly(r, star)) )
-    return vesc
+    '''escape velocity at an arbitray point in the star'''
+    #TDOD: prove this
+    return np.sqrt(2*(G_cgs * M_star_cgs/R_star_cgs + (phi_quick(R_star_cgs) - phi_quick(r))))
 
-# def T(r):
-#     '''temperature interpolation function that is fit to a MESA data array'''
-#     # TODO: swap with polytrope
-#     return T_fit(r)
+# # FAKE POLY
+# def v_esc(r):
+#     '''Escape velocity of n=3 polytrope at given radius (dimensionless xi)'''
+#     G = 6.6743*10**(-8) # gravitational constant in cgs units
+#     xi = 6.89*(r / star.get_radius_cm())
+#     r1 = star.get_radius_cm()
+#     vesc = np.sqrt( 2*G*star.get_mass_grams()/star.get_radius_cm() + 2*(phi_poly(r1, star) - phi_poly(r, star)) )
+#     return vesc
 
-# FAKE POLY
 def T(r):
-    '''temperature from polytrope'''
-    xi = 6.89*(r / star.get_radius_cm())
-    return star.core_temp * theta(xi)
+    '''temperature interpolation function that is fit to a MESA data array'''
+    # TODO: swap with polytrope
+    return T_fit(r)
 
+# # FAKE POLY
+# def T(r):
+#     '''temperature from polytrope'''
+#     xi = 6.89*(r / star.get_radius_cm())
+#     return star.core_temp * theta(xi)
 
-# def n_p(r):
-#     '''number density interpolation function that uses fits from a MESA data array'''
-#     # TODO: swap with polytrope
-#     return x_mass_fraction_H_fit(r) * rho_fit(r) / m_p
-
-# FAKE POLY
 def n_p(r):
-    '''takes eta of  a N=3 polytrope, and then coverts to number density'''
-    n_p = rho_c_poly(star) * eta_poly(r, star) / m_p
-    return n_p
+    '''number density interpolation function that uses fits from a MESA data array'''
+    # TODO: swap with polytrope
+    return x_mass_fraction_H_fit(r) * rho_fit(r) / m_p
+
+# # FAKE POLY
+# def n_p(r):
+#     '''takes eta of  a N=3 polytrope, and then coverts to number density'''
+#     n_p = rho_c_poly(star) * eta_poly(r, star) / m_p
+#     return n_p
 
 def phi_integrand(r):
     '''integrand for the phi() function'''
@@ -384,29 +410,28 @@ def phi2(r):
     ''' calculate potential from acceleration at radius r given by mesa'''
     return quad(phi2_integrand, 0, r, limit=1000)[0]
 
-# def phi_quick(r):
-#     '''uses an interpolation for the gravitational potential which is faster than taking the integrals everytime'''
-#     return phi_fit(r)
-
-# FAKE POLY
 def phi_quick(r):
-    '''polytropic potential'''
-    xi = 6.89*(r / star.get_radius_cm())
-    G = 6.6743*10**(-8) # gravitational constant in cgs units
-    phi_xi = 4*np.pi*G*(rho_c_poly(star))*(star.get_radius_cm()/xis[-1])**2 * (1 - theta(xi)) #cgs units
-    return phi_xi
+    '''uses an interpolation for the gravitational potential which is faster than taking the integrals everytime'''
+    return phi_fit(r)
 
+# # FAKE POLY
+# def phi_quick(r):
+#     '''polytropic potential'''
+#     xi = 6.89*(r / star.get_radius_cm())
+#     G = 6.6743*10**(-8) # gravitational constant in cgs units
+#     phi_xi = 4*np.pi*G*(rho_c_poly(star))*(star.get_radius_cm()/xis[-1])**2 * (1 - theta(xi)) #cgs units
+#     return phi_xi
 
-# def rho(r):
-#     '''calculates the density at r from MESA using an interpolated fit from a data array'''
-#     # TODO: swap with polytrope
-#     return rho_fit(r)
-
-# FAKE POLY
 def rho(r):
-    '''Density at radius r of polytrope'''
-    xi = 6.89*(r / star.get_radius_cm())
-    return rho_c_poly(star) * theta_cube(xi)
+    '''calculates the density at r from MESA using an interpolated fit from a data array'''
+    # TODO: swap with polytrope
+    return rho_fit(r)
+
+# # FAKE POLY
+# def rho(r):
+#     '''Density at radius r of polytrope'''
+#     xi = 6.89*(r / star.get_radius_cm())
+#     return rho_c_poly(star) * theta_cube(xi)
 
 def mass_enc(r):
     '''calculates the mass enclosed to r from MESA using an interpolated fit from a data array'''
@@ -900,7 +925,7 @@ def main():
             )
 
             # alpha
-            plt.pcolormesh(m_chi_sample, r, alpha_sample, cmap=palette1, shading='auto', edgecolors='face', norm=colors.LogNorm(vmin=alpha_sample.min(), vmax=alpha_sample.max()))
+            plt.pcolormesh(m_chi_sample, r, alpha_sample, cmap=palette1, shading='auto', edgecolors='face', norm=colors.LogNorm(vmin=abs(alpha_sample.min()), vmax=abs(alpha_sample.max())))
             cbar = plt.colorbar()
             # cbar.set_label('$\\log_{10} (\\rho_{plat.}/$ GeV cm$^{-3})$', fontsize = 13)
             # cbar.set_ticks(list(np.linspace(9, 19, 11)))
@@ -957,12 +982,12 @@ def main():
             # print(R310(0.93*10**11, T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
 
             # check to see if 3.11 recovers 3.10
-            rrr = 0.6*10**11  # cm
-            print("#######################")
-            print("R values at T(r) = T_chi")
-            print("R 3.10 =", R310(rrr, T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
-            print("R 3.11 =", R311_2(rrr, T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
-            print("#######################")
+            # rrr = 0.6*10**11  # cm
+            # print("#######################")
+            # print("R values at T(r) = T_chi")
+            # print("R 3.10 =", R310(rrr, T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
+            # print("R 3.11 =", R311_2(rrr, T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
+            # print("#######################")
 
             R311_sample = []
             R310_sample = []
@@ -970,32 +995,39 @@ def main():
             tsame = []
             rate = []
             for i in range(len(r)):
-                R310_sample.append(R310(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
-                R311_sample.append(R311_2(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
+                R310_sample.append(abs(R310(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma)))
+                R311_sample.append(abs(R311_2(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma)))
+                # R310_sample.append(R310(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
+                # R311_sample.append(R311_2(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
                 norm.append(normfactor(r[i], m*g_per_GeV, T_chi_fit(m*g_per_GeV)))
-                if abs(T(r[i]) - T_chi_fit(m*g_per_GeV))/T(r[i]) < 0.01:
-                    tsame.append(r[i])
-                if abs(T(r[i]) - T_chi_fit(m*g_per_GeV))/T(r[i]) < 0.1:
-                    # rate.append(R310_sample[i])
-                    rate.append(R311_sample[i])
-                else:
-                    rate.append(R311_sample[i])
-                    # rate.append(R310_sample[i]/norm[i])
+                rate.append(R311_sample[i]/norm[i])
+                # if abs(T(r[i]) - T_chi_fit(m*g_per_GeV))/T(r[i]) < 0.01:
+                #     tsame.append(r[i])
+                # if abs(T(r[i]) - T_chi_fit(m*g_per_GeV))/T(r[i]) < 0.1:
+                #     rate.append(R310_sample[i])
+                #     # rate.append(R311_sample[i])
+                # else:
+                #     rate.append(R311_sample[i])
+                #     # rate.append(R310_sample[i]/norm[i])
 
 
             # print(R311_sample)
             # PLOT
-            plt.plot(r, rate, ls = '-', linewidth = 2, label=mesa_lab)
+            # plt.plot(r, rate, ls = '-', linewidth = 2, label=mesa_lab)
+            plt.plot(r, rate, ls = '-', linewidth = 2, label="R 3.11 normalized " + mesa_lab)
+            plt.plot(r, R311_sample, ls = '-', linewidth = 2, label="R 3.11 " + mesa_lab)
+            plt.plot(r, R310_sample, ls = '--', linewidth = 2, label="R 3.10 " + mesa_lab)
+            # plt.plot(r, rate, ls = '-', linewidth = 2, label=mesa_lab)
             if tsame:
                 plt.axvline(x=tsame[0], label="$T_{\chi} = T(r)$", c="#8A2BE2", linewidth=2)
-            plt.title("MESA Gould Eq. 3.10/11" + lab_mass  + "$M_{\\odot}$ (Windhorst)")
+            plt.title("MESA Gould Eq. 3.10 " + lab_mass  + "$M_{\\odot}$ (Windhorst)")
             plt.legend()
             plt.xlabel('$r$ [cm]')
             plt.ylabel('$R(w|v)$ [???]')
-            # plt.ylim(0, 10**(-7))
+            plt.ylim(-10**(-9), 10**(-9))
             # plt.yscale("log")
             # plt.xscale("log")
-            file = "R311_" + str(args.direc) + "_" + str(args.profile) + ".png"
+            file = "R310_" + str(args.direc) + "_" + str(args.profile) + ".png"
             plt.savefig(file, dpi=400)
             # plt.show()
             plt.clf()
