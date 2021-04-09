@@ -1,6 +1,6 @@
 *.png
-*.data
-*.index
+# *.data
+# *.index
 # *.csv
 *.pdf
 !plots/*

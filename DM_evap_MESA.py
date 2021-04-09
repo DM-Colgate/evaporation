@@ -734,7 +734,6 @@ def main():
                 print("This will generate the necesary data and save it in", file)
                 exit()
 
-
         if args.MESA:
             T_sample = []
             rho_sample = []
@@ -948,13 +947,23 @@ def main():
             plt.savefig(file, dpi=400)
             plt.clf()
 
-        # NOW CALC EVAP RATES
         if args.G311:
             '''now calculate evap rates'''
+            # assign mass to be used for these plots
             m = 10**(-1)
+
             # DEBUG
             # R311_2(0.28*10**11, T_chi_fit(10**(-2)*g_per_GeV), 10**(-2)*g_per_GeV, sigma)
             # print(R310(0.93*10**11, T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
+
+            # check to see if 3.11 recovers 3.10
+            rrr = 0.6*10**11  # cm
+            print("#######################")
+            print("R values at T(r) = T_chi")
+            print("R 3.10 =", R310(rrr, T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
+            print("R 3.11 =", R311_2(rrr, T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
+            print("#######################")
+
             R311_sample = []
             R310_sample = []
             norm = []
