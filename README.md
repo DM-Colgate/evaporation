@@ -32,24 +32,25 @@ These indices can be found inside the `profiles.index` file.
 
 The current command line arguments are:
 ```
-usage: DM_evap_MESA.py [-h] [-D DIREC] [-p PROFILE] [-T TCHIMCHI] [-M] [-P] [-e]
-                       [-R] [-H]
+usage: DM_evap_MESA.py [-h] [-D DIREC] [-p PROFILE] [-T] [-M] [-P] [-E]
+                       [-e] [-R] [-H]
 
 optional arguments:
   -h, --help            show this help message and exit
   -D DIREC, --direc DIREC
-                        directory containing MESA profile and history files
+                        directory containing MESA profile and history
+                        files
   -p PROFILE, --profile PROFILE
                         index of the profile to use
-  -T TCHIMCHI, --TchiMchi TCHIMCHI
-                        name of csv file to store T_chi data in after solving
-                        with Eq. 4.10 from Spergel and Press 1985
+  -T, --TchiMchi        name of csv file to store T_chi data in after
+                        solving with Eq. 4.10 from Spergel and Press 1985
   -M, --MESA            plot stellar parameters from MESA
   -P, --poly            plot stellar parameters for N=3 polytope
-  -e, --evap            plot DM evap rate from MESA data files
+  -E, --Evap            plot DM evap rate by calculating from MESA data
+                        files
+  -e, --evapcsv         plot DM evap rate using previously calculated csv
   -R, --G311            plot Gould 3.11 equation
   -H, --heatmap         plot heatmaps for alpha, beta, and gamma
-usage: evap_snapshot.py [-h] [-D DIREC] [-p PROFILE] [-T] [-t] [-V] [-v] [-n]
 ```
 These can be printed with `./DM_evap_MESA.py -h`.
 
@@ -62,19 +63,20 @@ These can be printed with `./DM_evap_MESA.py -h`.
  - [X] How to get polytrope central temp???
  - [X] Compare Goulde 3.11 R(w|v) function against Caleb's.
  - [X] Two different cetral densities for polytrope?
+ - [X] Boltzmann constant in alpha, beta, gamma and mpf(gibberish)?
+ - [X] Why is MESA's Gould 3.11 R(w|v) 10^9 larger than caleb's?
+ - [X] Why is v_esc so different for MESA and N=3?
+ - [X] Check V_esc within the star is being calculated right.
+ - [X] Check normalization factor.
+ - [X] Check input functions to DM temp (i.e. boltzman constant).
+ - [X] Check DM temp lines up with expected.
+ - [X] Run evap code using polytrope stellar functions, is it still bad?
+ - [X] Precision issues in scipy quad integrals?
+ - [X] Discrepency in central density between MESA and N=3?
+ - [ ] Shell rate 3.11 goes negative at certain points? Fix this.
+ - [ ] Evap. turns back up above 10^3 GeV?
  - [ ] Why is potential from MESA wrong by a factor of 0.5???
- - [ ] Boltzmann constant in alpha, beta, gamma and mpf(gibberish)?
- - [ ] Why is MESA's Gould 3.11 R(w|v) 10^9 larger than caleb's?
- - [ ] Why is v_esc so different for MESA and N=3?
- - [ ] Check V_esc within the star is being calculated right.
- - [ ] Check normalization factor.
- - [ ] Check input functions to DM temp (i.e. boltzman constant).
- - [ ] Check DM temp lines up with expected.
- - [ ] Run evap code using polytrope stellar functions, is it still bad?
- - [ ] Precision issues in scipy quad integrals?
- - [ ] Discrepency in central density between MESA and N=3?
  - [ ] Automate plotting multiple models and/or multiple stars.
- - [ ] Specify name of output CSV and plots from command line.
 
 ### quad error
 ```

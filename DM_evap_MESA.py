@@ -255,20 +255,11 @@ def R39(r, T_chi, m_chi, sigma):
 
 def v_chi(r, m_chi, T_chi):
     '''DM velocity assuming an isothermal dist'''
-    return np.sqrt(2*T_chi/m_chi)
+    return np.sqrt(2*k_cgs*T_chi/m_chi)
 
 def n_chi(r, T_chi, m_chi):
     '''normalized isotropic DM distribution using user supplied potential and DM temp (from MESA)'''
     return np.exp(-1.0*m_chi*phi_quick(r)/(k_cgs*T_chi))
-
-# # FAKE POLY
-# def n_chi(r, Tx, mx): #Normalized
-#     '''isotropic DM distribution using potential from n=3 polytrope'''
-#     xi = 6.89*(r / star.get_radius_cm())
-#     kb = 1.380649e-16 #Boltzmann constant in cgs Units (erg/K)
-#     # numerical DM number density profile for each DM mass (normalized)
-#     nx_xi_val = np.exp(-mx*phi_quick(r)/(kb*Tx)) 
-#     return nx_xi_val
 
 def alpha(pm, r, m_chi, w, v):
     '''made up goulde function'''
@@ -454,21 +445,23 @@ def normfactor(r, m_chi, T_chi):
     '''normalization factor'''
     ###TODO:check
     t1 = sc.erf(v_c(r)/v_chi(r, m_chi, T_chi))
-    t2 = (2/np.pi)*(v_c(r)/v_chi(r, m_chi, T_chi))
+    t2 = (2/np.sqrt(np.pi))*(v_c(r)/v_chi(r, m_chi, T_chi))
     t3 = np.exp(-1*v_c(r)**2 /(v_chi(r, m_chi, T_chi)**2))
     return t1 - t2*t3
 
 def evap_rate_integrand(r, T_chi, m_chi, sigma):
     '''the integrand that evap_rate() will evaluate'''
-    r311 =  R311_2(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
-    # r39 =  R39(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
-    # print("DIFF = ", r39-r311)
-    # diff.append(r39-r311)
+    r311 = n_chi(r, T_chi, m_chi) * abs(R311_2(r, T_chi, m_chi, sigma)) / normfactor(r, m_chi, T_chi)
     return r311
+
+def evap_rate_lower_integrand(r, T_chi, m_chi):
+    '''the lower integrand that evap_rate() will evaluate'''
+    n = n_chi(r, T_chi, m_chi)
+    return n
 
 def evap_rate(T_chi, m_chi, sigma):
     '''evaporation rate of DM for the whole star'''
-    return quad(evap_rate_integrand, 0, R_star_cgs, args=(T_chi, m_chi, sigma))[0] * quad(n_chi, 0, R_star_cgs, args=(T_chi, m_chi), limit=1000)[0]
+    return quad(evap_rate_integrand, 0, R_star_cgs, args=(T_chi, m_chi, sigma))[0]/quad(evap_rate_lower_integrand, 0, R_star_cgs, args=(T_chi, m_chi), limit=1000)[0]
 
 def read_in_T_chi(name):
     '''reads T_chi vs M_chi data from CSV files'''
@@ -484,6 +477,20 @@ def read_in_T_chi(name):
     # now fit interpolation functions to T_chi w.r.t m_chi
     T_chi_fit = interp(m_chi_csv, T_chi_csv)
     return (m_chi_csv, T_chi_csv, T_chi_fit)
+
+def read_in_evap(name):
+    '''reads T_chi vs M_chi data from CSV files'''
+    # read DM temp from csv
+    m_chi_csv = []
+    evap_csv = []
+    with open(name) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            evap_csv.append(float(row[1]))
+            m_chi_csv.append(float(row[0]))
+
+    # now fit interpolation functions to T_chi w.r.t m_chi
+    return (m_chi_csv, evap_csv)
 
 def solve_T_chi(m_chi_sample, name):
     '''solves T_chi in the SP85 equation 4.10 using fsolve'''
@@ -600,15 +607,14 @@ def n_p_poly(r, star):
     n_p = rho_c_poly(star) * eta_poly(r, star) / m_p
     return n_p
 
-def n_chi_poly(mx, xi, star): #Normalized
+def n_chi_poly(mx, r, star, Tx): #Normalized
     '''isotropic DM distribution using potential from n=3 polytrope'''
+    xi = 6.89*(r / star.get_radius_cm())
     kb = 1.380649e-16 #Boltzmann constant in cgs Units (erg/K)
-    # finding Tx using Temperature function
-    Tx = tau_fit(mx, star) * 10**8 #K
     # mx in g
     mx_g = mx*1.783e-24
     # numerical DM number density profile for each DM mass (normalized)
-    nx_xi_val = np.exp(-mx_g*potential_poly(xi, star)/(kb*Tx)) 
+    nx_xi_val = np.exp(-mx_g*phi_poly(r, star)/(kb*Tx))
     return nx_xi_val
 
 def read_in_poly(name):
@@ -642,14 +648,14 @@ def v_esc_poly(r, star):
 # MAIN #
 ########
 def main():
-    # parse commandline arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-D", "--direc", help="directory containing MESA profile and history files")
     parser.add_argument("-p", "--profile", help="index of the profile to use", type=int)
     parser.add_argument("-T", "--TchiMchi", help="name of csv file to store T_chi data in after solving with Eq. 4.10 from Spergel and Press 1985", action='store_true')
     parser.add_argument("-M", "--MESA", help="plot stellar parameters from MESA", action='store_true')
     parser.add_argument("-P", "--poly", help="plot stellar parameters for N=3 polytope", action='store_true')
-    parser.add_argument("-e", "--evap", help="plot DM evap rate from MESA data files", action='store_true')
+    parser.add_argument("-E", "--Evap", help="plot DM evap rate by calculating from MESA data files", action='store_true')
+    parser.add_argument("-e", "--evapcsv", help="plot DM evap rate using previously calculated csv", action='store_true')
     parser.add_argument("-R", "--G311", help="plot Gould 3.11 equation", action='store_true')
     parser.add_argument("-H", "--heatmap", help="plot heatmaps for alpha, beta, and gamma", action='store_true')
     args = parser.parse_args()
@@ -692,7 +698,7 @@ def main():
 
         # ASSIGN ARRAYS FOR PLOTTING AND SAMPLING 
         # DM mass in GeV
-        m_chi_sample = np.logspace(-6, 5, 100)
+        m_chi_sample = np.logspace(-4, 3, 100)
 
         # DM mass in grams
         m_chi_sample_cgs = []
@@ -760,16 +766,22 @@ def main():
                 exit()
 
         if args.MESA:
+            '''setllar params from MESA'''
+            # mass and DM temp to use for ploting
+            m_chi = 10**(-1)
+            T_chi = T_chi_fit(m_chi*g_per_GeV)
             T_sample = []
             rho_sample = []
             phi_sample = []
             n_p_sample = []
+            n_chi_sample = []
             v_esc_sample = []
             for i in range(len(r)):
                 T_sample.append(T(r[i]))
                 rho_sample.append(rho(r[i]))
                 phi_sample.append(phi(r[i]))
                 n_p_sample.append(n_p(r[i]))
+                n_chi_sample.append(n_chi(r[i], T_chi, m_chi*g_per_GeV))
                 v_esc_sample.append(v_esc(r[i]))
 
             if args.poly:
@@ -778,73 +790,15 @@ def main():
                 rho_poly_sample = []
                 phi_poly_sample = []
                 n_p_poly_sample = []
+                n_chi_poly_sample = []
                 v_esc_poly_sample = []
                 for i in range(len(r_poly)):
                     T_poly_sample.append(T_poly(r_poly[i], M100))
                     rho_poly_sample.append(rho_poly(r_poly[i], M100))
                     phi_poly_sample.append(phi_poly(r_poly[i], M100))
                     n_p_poly_sample.append(n_p_poly(r_poly[i], M100))
+                    n_chi_poly_sample.append(n_chi_poly(m_chi, r_poly[i], M100, T_chi))
                     v_esc_poly_sample.append(v_esc_poly(r_poly[i], M100))
-
-            # print(T_poly_sample)
-            # print(rho_poly_sample)
-            # print(phi_poly_sample)
-            # print(n_p_poly_sample)
-            # print(v_esc_poly_sample)
-
-            # draw the multiplot
-            host = host_subplot(111, axes_class=AA.Axes)
-            plt.subplots_adjust(right=0.75)
-            par1 = host.twinx()
-            par2 = host.twinx()
-            par3 = host.twinx()
-            par4 = host.twinx()
-            offset = 50
-            fixed_axis_2 = par2.get_grid_helper().new_fixed_axis
-            fixed_axis_3 = par3.get_grid_helper().new_fixed_axis
-            fixed_axis_4 = par4.get_grid_helper().new_fixed_axis
-
-            par1.axis["right"] = fixed_axis_2(loc="right", axes=par2,offset=(offset, 0))
-            par1.axis["right"].toggle(all=True)
-            par2.axis["right"] = fixed_axis_3(loc="right", axes=par3,offset=(offset*2, 0))
-            par2.axis["right"].toggle(all=True)
-            par3.axis["right"] = fixed_axis_4(loc="right", axes=par4,offset=(offset*3, 0))
-            par3.axis["right"].toggle(all=True)
-
-            # host.set_xlim(0, 2)
-            # host.set_ylim(0, 2)
-            host.set_xlabel("Radius [cm]")
-            host.set_ylabel("Density")
-
-            par1.set_ylabel("Temperature [K]")
-            par2.set_ylabel("Escape Velocity")
-            par3.set_ylabel("Gravitational Potential")
-
-            p1, = host.plot(r, rho_sample, label="Density", color=palette1(5/10), linewidth=2)
-            p2, = par1.plot(r, T_sample, label="Temperature", color=palette(3/10), linewidth=2)
-            p3, = par2.plot(r, v_esc_sample, label="Escape Velocity", color=palette(6/10), linewidth=2)
-            p4, = par3.plot(r, phi_sample, label="Gravitational Potential", color=palette(8.6/10), linewidth=2)
-
-            b1, = host.plot(r_poly, rho_poly_sample, label="N=3", color=palette1(5/10), linewidth=2, ls='--')
-            b2, = par1.plot(r_poly, T_poly_sample, label="N=3", color=palette(3/10), linewidth=2, ls='--')
-            b3, = par2.plot(r_poly, v_esc_poly_sample, label="N=3", color=palette(6/10), linewidth=2, ls='--')
-            b4, = par3.plot(r_poly, phi_poly_sample, label="N=3", color=palette(8.6/10), linewidth=2, ls='--')
-
-            # par1.set_ylim(0, 4)
-            # par2.set_ylim(1, 65)
-            host.tick_params(axis='y', colors=p1.get_color())
-            par1.tick_params(axis='y', colors=p2.get_color())
-            par2.tick_params(axis='y', colors=p3.get_color())
-            par3.tick_params(axis='y', colors=p4.get_color())
-
-            host.legend()
-            # host.axis["left"].label.set_color(p1.get_color())
-            # par1.axis["right"].label.set_color(p2.get_color())
-            # par2.axis["right"].label.set_color(p3.get_color())
-            # par3.axis["right"].label.set_color(p4.get_color())
-            # par4.axis["right"].label.set_color(p5.get_color())
-            plt.draw()
-            plt.show()
 
             # PLOT density
             plt.plot(r, rho_sample, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
@@ -873,11 +827,24 @@ def main():
             plt.plot(r_poly, n_p_poly_sample, label="N=3 Polytrope", color=palette1(7/10), linewidth=2, ls='--')
             plt.title("Proton Number Density: MESA (Windhorst) vs. N=3, $100 M_{\\odot}$")
             plt.legend()
-            plt.yscale("log")
+            # plt.yscale("log")
             # plt.xscale("log")
             plt.xlabel("$r$ [cm]")
-            plt.ylabel("$n_p$ [$1/cm^3$]")
+            plt.ylabel("$n_p$ [$cm^{-3}$]")
             file = "np_" + str(args.direc) + "_" + str(args.profile) + ".png"
+            plt.savefig(file, dpi=400)
+            plt.clf()
+
+            # Plot n_chi
+            plt.plot(r, n_chi_sample, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
+            plt.plot(r_poly, n_chi_poly_sample, label="N=3 Polytrope", color=palette1(7/10), linewidth=2, ls='--')
+            plt.title("DM Number Density: MESA (Windhorst) vs. N=3, $100 M_{\\odot}$")
+            plt.legend()
+            # plt.yscale("log")
+            # plt.xscale("log")
+            plt.xlabel("$r$ [cm]")
+            plt.ylabel("$n_{\chi}$ [$cm^{-3}$]")
+            file = "nchi_" + str(args.direc) + "_" + str(args.profile) + ".png"
             plt.savefig(file, dpi=400)
             plt.clf()
 
@@ -1001,14 +968,6 @@ def main():
                 # R311_sample.append(R311_2(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
                 norm.append(normfactor(r[i], m*g_per_GeV, T_chi_fit(m*g_per_GeV)))
                 rate.append(R311_sample[i]/norm[i])
-                # if abs(T(r[i]) - T_chi_fit(m*g_per_GeV))/T(r[i]) < 0.01:
-                #     tsame.append(r[i])
-                # if abs(T(r[i]) - T_chi_fit(m*g_per_GeV))/T(r[i]) < 0.1:
-                #     rate.append(R310_sample[i])
-                #     # rate.append(R311_sample[i])
-                # else:
-                #     rate.append(R311_sample[i])
-                #     # rate.append(R310_sample[i]/norm[i])
 
 
             # print(R311_sample)
@@ -1018,8 +977,8 @@ def main():
             plt.plot(r, R311_sample, ls = '-', linewidth = 2, label="R 3.11 " + mesa_lab)
             plt.plot(r, R310_sample, ls = '--', linewidth = 2, label="R 3.10 " + mesa_lab)
             # plt.plot(r, rate, ls = '-', linewidth = 2, label=mesa_lab)
-            if tsame:
-                plt.axvline(x=tsame[0], label="$T_{\chi} = T(r)$", c="#8A2BE2", linewidth=2)
+            # if tsame:
+            #     plt.axvline(x=tsame[0], label="$T_{\chi} = T(r)$", c="#8A2BE2", linewidth=2)
             plt.title("MESA Gould Eq. 3.10 " + lab_mass  + "$M_{\\odot}$ (Windhorst)")
             plt.legend()
             plt.xlabel('$r$ [cm]')
@@ -1027,7 +986,7 @@ def main():
             plt.ylim(-10**(-9), 10**(-9))
             # plt.yscale("log")
             # plt.xscale("log")
-            file = "R310_" + str(args.direc) + "_" + str(args.profile) + ".png"
+            file = "R311_" + str(args.direc) + "_" + str(args.profile) + ".png"
             plt.savefig(file, dpi=400)
             # plt.show()
             plt.clf()
@@ -1044,28 +1003,36 @@ def main():
             # plt.show()
             plt.clf()
 
-        # NOW CALC EVAP RATES
-        if args.evap:
+        if args.Evap:
+            '''NOW CALC EVAP RATES'''
             evap_sample = []
             for i in range(len(m_chi_csv)):
                 print("####################################################")
-                print("Getting evap rate for m_chi =", m_chi_csv[i], "g...")
+                print("Getting evap. rate for m_chi =", m_chi_csv[i]/g_per_GeV, "GeV...")
                 evap_sample.append(evap_rate(T_chi_csv[i], m_chi_csv[i], sigma))
+                print("Evap. rate is =", evap_sample[i])
 
             m_chi_csv_GeV = []
             for i in range(len(m_chi_csv)):
                 m_chi_csv_GeV.append(m_chi_csv[i]/g_per_GeV)
 
+            print(evap_sample)
+
             # write to CSV
             m_chi_csv_GeV = np.asarray(m_chi_csv_GeV)
             evap_sample = np.asarray(evap_sample)
             output = np.column_stack((m_chi_csv_GeV.flatten(), evap_sample.flatten()))
-            np.savetxt('Ilie4_evap.csv',output,delimiter=',')
+            file = "E_" + str(args.direc) + "_" + str(args.profile) + ".csv"
+            np.savetxt(file,output,delimiter=',')
+
+            print(evap_sample)
 
             # PLOT
             plt.plot(m_chi_csv_GeV, evap_sample, ls = '-', linewidth = 1, label=mesa_lab)
             plt.title("MESA DM Evap. Rate $100 M_{\\odot}$ (Windhorst)")
             plt.legend()
+            # plt.xlim(10**-4, 10**1)
+            plt.ylim(10**-7, 10**-12)
             plt.xlabel('$m_{\\chi}$ [Gev]')
             plt.ylabel('$E$ [$s^{-1}$]')
             plt.yscale("log")
@@ -1074,6 +1041,36 @@ def main():
             plt.savefig(file, dpi=400)
             # plt.show()
             plt.clf()
+
+    if args.evapcsv:
+        '''read and plt evap from csv'''
+        file = "E_" + str(args.direc) +"_" + str(args.profile) + ".csv"
+        if path.exists(file) == True:
+            (m_chi_csv_GeV, evap_csv) = read_in_evap(file)
+        else:
+            print("The evaporation data for", args.direc, args.profile, "has yet to be computed.")
+            print("To do so, simply run:")
+            print(" ")
+            print("./DM_evap_MESA.py -D", args.direc, "-p", args.profile, "-E")
+            print(" ")
+            print("This will generate the necesary data and save it in", file)
+            exit()
+
+        # PLOT
+        plt.plot(m_chi_csv_GeV, evap_csv, ls = '-', linewidth = 1, label=mesa_lab)
+        plt.title("MESA DM Evap. Rate $100 M_{\\odot}$ (Windhorst)")
+        plt.legend()
+        plt.xlim(10**-6, 10**3)
+        plt.ylim(10**-15, 10**-4)
+        plt.xlabel('$m_{\\chi}$ [Gev]')
+        plt.ylabel('$E$ [$s^{-1}$]')
+        plt.yscale("log")
+        plt.xscale("log")
+        file = "E_" + str(args.direc) + "_" + str(args.profile) + ".png"
+        plt.savefig(file, dpi=400)
+        # plt.show()
+        plt.clf()
+
 
 ###########
 # EXECUTE #
