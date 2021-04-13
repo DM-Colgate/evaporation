@@ -451,12 +451,12 @@ def normfactor(r, m_chi, T_chi):
 
 def evap_rate_integrand(r, T_chi, m_chi, sigma):
     '''the integrand that evap_rate() will evaluate'''
-    r311 = n_chi(r, T_chi, m_chi) * abs(R311_2(r, T_chi, m_chi, sigma)) / normfactor(r, m_chi, T_chi)
+    r311 = r**2 * n_chi(r, T_chi, m_chi) * abs(R311_2(r, T_chi, m_chi, sigma)) / normfactor(r, m_chi, T_chi)
     return r311
 
 def evap_rate_lower_integrand(r, T_chi, m_chi):
     '''the lower integrand that evap_rate() will evaluate'''
-    n = n_chi(r, T_chi, m_chi)
+    n = r **2 * n_chi(r, T_chi, m_chi)
     return n
 
 def evap_rate(T_chi, m_chi, sigma):
