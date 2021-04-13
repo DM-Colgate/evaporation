@@ -449,6 +449,13 @@ def normfactor(r, m_chi, T_chi):
     t3 = np.exp(-1*v_c(r)**2 /(v_chi(r, m_chi, T_chi)**2))
     return t1 - t2*t3
 
+def normfactor_poly(r, mx, Tx, star):
+    xi = 6.89*(r / star.get_radius_cm())
+    ux = v_chi_poly(mx, Tx, star)
+    ue_xi = v_esc_poly(r, star)
+    ret_val =  sc.erf(ue_xi/ux) - 2/np.sqrt(np.pi)*ue_xi/ux*np.exp(-ue_xi**2/ux**2) 
+    return ret_val
+
 def evap_rate_integrand(r, T_chi, m_chi, sigma):
     '''the integrand that evap_rate() will evaluate'''
     r311 = r**2 * n_chi(r, T_chi, m_chi) * abs(R311_2(r, T_chi, m_chi, sigma)) / normfactor(r, m_chi, T_chi)
@@ -644,6 +651,13 @@ def v_esc_poly(r, star):
     vesc = np.sqrt( 2*G*star.get_mass_grams()/star.get_radius_cm() + 2*(phi_poly(r1, star) - phi_poly(r, star)) )
     return vesc
 
+def v_chi_poly(mx, Tx, star):
+    kb = 1.380649e-16 #Boltzmann constant in cgs Units (erg/K)
+    mx_g = mx
+    vx = np.sqrt(2*kb*Tx/mx_g) #cm/s
+    ux = vx/star.get_vesc_surf() #Dimensionless
+    return vx
+
 ########
 # MAIN #
 ########
@@ -663,6 +677,11 @@ def main():
     # DM nucleon cross section
     sigma = 1*10**(-43)
 
+    # Pop III polytrope class
+    M100 = PopIIIStar(100, 10**0.6147, 10**6.1470, 1.176e8, 32.3, 10**6)
+    M300 = PopIIIStar(300, 10**0.8697, 10**6.8172, 1.245e8, 18.8, 10**6)
+    M1000 = PopIIIStar(1000, 10**1.1090, 10**7.3047, 1.307e8, 10.49, 10**6)
+
     # assign various physical constants as global variables
     assign_const()
 
@@ -678,9 +697,6 @@ def main():
         '''polytrope defintions and initalizations we will need if we want to compare'''
         global star
         star = PopIIIStar(100, 10**0.6147, 10**6.1470, 1.176e8, 32.3, 10**6)
-        M100 = PopIIIStar(100, 10**0.6147, 10**6.1470, 1.176e8, 32.3, 10**6)
-        M300 = PopIIIStar(300, 10**0.8697, 10**6.8172, 1.245e8, 18.8, 10**6)
-        M1000 = PopIIIStar(1000, 10**1.1090, 10**7.3047, 1.307e8, 10.49, 10**6)
 
         # read in numerical solution to lane-ememda eqaution from CSV file
         global xis
@@ -959,31 +975,27 @@ def main():
             R311_sample = []
             R310_sample = []
             norm = []
+            norm_poly = []
             tsame = []
             rate = []
             for i in range(len(r)):
                 R310_sample.append(abs(R310(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma)))
                 R311_sample.append(abs(R311_2(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma)))
-                # R310_sample.append(R310(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
-                # R311_sample.append(R311_2(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
                 norm.append(normfactor(r[i], m*g_per_GeV, T_chi_fit(m*g_per_GeV)))
+                norm_poly.append(normfactor_poly(r[i], m*g_per_GeV, T_chi_fit(m*g_per_GeV), M100))
                 rate.append(R311_sample[i]/norm[i])
 
-
-            # print(R311_sample)
             # PLOT
-            # plt.plot(r, rate, ls = '-', linewidth = 2, label=mesa_lab)
             plt.plot(r, rate, ls = '-', linewidth = 2, label="R 3.11 normalized " + mesa_lab)
             plt.plot(r, R311_sample, ls = '-', linewidth = 2, label="R 3.11 " + mesa_lab)
             plt.plot(r, R310_sample, ls = '--', linewidth = 2, label="R 3.10 " + mesa_lab)
-            # plt.plot(r, rate, ls = '-', linewidth = 2, label=mesa_lab)
             # if tsame:
             #     plt.axvline(x=tsame[0], label="$T_{\chi} = T(r)$", c="#8A2BE2", linewidth=2)
             plt.title("MESA Gould Eq. 3.10 " + lab_mass  + "$M_{\\odot}$ (Windhorst)")
             plt.legend()
             plt.xlabel('$r$ [cm]')
             plt.ylabel('$R(w|v)$ [???]')
-            plt.ylim(-10**(-9), 10**(-9))
+            plt.ylim(0, 1.5*10**(-9))
             # plt.yscale("log")
             # plt.xscale("log")
             file = "R311_" + str(args.direc) + "_" + str(args.profile) + ".png"
@@ -992,6 +1004,7 @@ def main():
             plt.clf()
 
             plt.plot(r, norm, ls = '-', linewidth = 2, label=mesa_lab)
+            plt.plot(r, norm_poly, ls = '--', linewidth = 2, label="caleb's")
             plt.title("MESA Gould Normalization Factor" + lab_mass  + "$M_{\\odot}$ (Windhorst)")
             plt.legend()
             plt.xlabel('$r$ [cm]')
