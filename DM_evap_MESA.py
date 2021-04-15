@@ -138,7 +138,7 @@ def R310(r, T_chi, m_chi, sigma):
     # skeleton structure of the expresion
     b11thru16 = b14*D(b15)*D(b16) - b11*D(b12)*D(b13)
     b11thru16 = float(b11thru16)
-    return a1*a2*(b3*(c4 - c5)*b6 + b7*(c8-c9)*b10 + b11thru16)
+    return -1*a1*a2*(b3*(c4 - c5)*b6 + b7*(c8-c9)*b10 + b11thru16)
 
 def R311_2(r, T_chi, m_chi, sigma):
     '''Eq. 3.11 from Goulde 1987, normalized evap. rate'''
@@ -184,10 +184,10 @@ def R311_2(r, T_chi, m_chi, sigma):
     # print("b19 = ", b19)
     # print("b20 = ", b20)
     # print( a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20))
-    return a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20)
+    return -1*a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20)
 
 def R311_3(mx, xi, sigma, star):
-    #Central proton number density (cm^-3)
+    # central proton number density (cm^-3)
     nc = polytrope3_rhoc(star)*0.75/1.6726e-24
     kb = 1.380649e-16 #Boltzmann constant in cgs Units (erg/K)
     T = (10**8) * theta(xi)
@@ -458,7 +458,7 @@ def normfactor_poly(r, mx, Tx, star):
 
 def evap_rate_integrand(r, T_chi, m_chi, sigma):
     '''the integrand that evap_rate() will evaluate'''
-    r311 = r**2 * n_chi(r, T_chi, m_chi) * abs(R311_2(r, T_chi, m_chi, sigma)) / normfactor(r, m_chi, T_chi)
+    r311 = r**2 * n_chi(r, T_chi, m_chi) * R311_2(r, T_chi, m_chi, sigma) / normfactor(r, m_chi, T_chi)
     return r311
 
 def evap_rate_lower_integrand(r, T_chi, m_chi):
@@ -667,7 +667,6 @@ def main():
     parser.add_argument("-p", "--profile", help="index of the profile to use", type=int)
     parser.add_argument("-T", "--TchiMchi", help="name of csv file to store T_chi data in after solving with Eq. 4.10 from Spergel and Press 1985", action='store_true')
     parser.add_argument("-M", "--MESA", help="plot stellar parameters from MESA", action='store_true')
-    parser.add_argument("-P", "--poly", help="plot stellar parameters for N=3 polytope", action='store_true')
     parser.add_argument("-E", "--Evap", help="plot DM evap rate by calculating from MESA data files", action='store_true')
     parser.add_argument("-e", "--evapcsv", help="plot DM evap rate using previously calculated csv", action='store_true')
     parser.add_argument("-R", "--G311", help="plot Gould 3.11 equation", action='store_true')
@@ -693,16 +692,22 @@ def main():
     # palette.set_over('white')
     # palette.set_under('white')
 
-    if args.poly:
-        '''polytrope defintions and initalizations we will need if we want to compare'''
-        global star
-        star = PopIIIStar(100, 10**0.6147, 10**6.1470, 1.176e8, 32.3, 10**6)
+    # polytrope defintions and initalizations we will need if we want to compare
+    global star
 
-        # read in numerical solution to lane-ememda eqaution from CSV file
-        global xis
-        global theta
-        global theta_cube
-        (xis, theta, theta_cube) = read_in_poly('Lane_Emden.csv')
+    # use polytrop that corresponds to the mass of the MESA star
+    if args.direc == '1' or args.direc == '4':
+        star = M100
+    if args.direc == '2' or args.direc == '5':
+        star = M300
+    if args.direc == '3' or args.direc == '6':
+        star = M1000
+
+    # read in numerical solution to lane-ememda eqaution from CSV file
+    global xis
+    global theta
+    global theta_cube
+    (xis, theta, theta_cube) = read_in_poly('Lane_Emden.csv')
 
     if args.direc and args.profile:
         '''this is the main part of main'''
@@ -714,7 +719,7 @@ def main():
 
         # ASSIGN ARRAYS FOR PLOTTING AND SAMPLING 
         # DM mass in GeV
-        m_chi_sample = np.logspace(-4, 3, 100)
+        m_chi_sample = np.logspace(-6, 5, 100)
 
         # DM mass in grams
         m_chi_sample_cgs = []
@@ -734,7 +739,7 @@ def main():
         # solve for temp with SP85
         if args.TchiMchi:
             '''use fsolve and SP85 to find the DM temperature'''
-            name = "TM" + str(args.direc) +"_" + str(args.profile) + ".csv"
+            name = "TM" + str(args.direc) +"_" + str(args.profile)
             T_chi_sample = solve_T_chi(m_chi_sample, name)
 
             # calc tau and mu
@@ -800,26 +805,26 @@ def main():
                 n_chi_sample.append(n_chi(r[i], T_chi, m_chi*g_per_GeV))
                 v_esc_sample.append(v_esc(r[i]))
 
-            if args.poly:
-                r_poly = np.linspace(prof.radius_cm[-1], M100.get_radius_cm(), 100)
-                T_poly_sample = []
-                rho_poly_sample = []
-                phi_poly_sample = []
-                n_p_poly_sample = []
-                n_chi_poly_sample = []
-                v_esc_poly_sample = []
-                for i in range(len(r_poly)):
-                    T_poly_sample.append(T_poly(r_poly[i], M100))
-                    rho_poly_sample.append(rho_poly(r_poly[i], M100))
-                    phi_poly_sample.append(phi_poly(r_poly[i], M100))
-                    n_p_poly_sample.append(n_p_poly(r_poly[i], M100))
-                    n_chi_poly_sample.append(n_chi_poly(m_chi, r_poly[i], M100, T_chi))
-                    v_esc_poly_sample.append(v_esc_poly(r_poly[i], M100))
+            r_poly = np.linspace(prof.radius_cm[-1], star.get_radius_cm(), 100)
+            T_poly_sample = []
+            rho_poly_sample = []
+            phi_poly_sample = []
+            n_p_poly_sample = []
+            n_chi_poly_sample = []
+            v_esc_poly_sample = []
+
+            for i in range(len(r_poly)):
+                T_poly_sample.append(T_poly(r_poly[i], star))
+                rho_poly_sample.append(rho_poly(r_poly[i], star))
+                phi_poly_sample.append(phi_poly(r_poly[i], star))
+                n_p_poly_sample.append(n_p_poly(r_poly[i], star))
+                n_chi_poly_sample.append(n_chi_poly(m_chi, r_poly[i], star, T_chi))
+                v_esc_poly_sample.append(v_esc_poly(r_poly[i], star))
 
             # PLOT density
             plt.plot(r, rho_sample, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
             plt.plot(r_poly, rho_poly_sample, label="N=3 Polytrope", color=palette1(7/10), linewidth=2, ls='--')
-            plt.title("Density: MESA (Windhorst) vs. N=3, $100 M_{\\odot}$")
+            plt.title("Density: MESA (Windhorst) vs. N=3")
             plt.legend()
             plt.xlabel("$r$ [cm]")
             plt.ylabel("$\\rho$ [$g/cm^3$]")
@@ -830,7 +835,10 @@ def main():
             # PLOT temp
             plt.plot(r, T_sample, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
             plt.plot(r_poly, T_poly_sample, label="N=3 Polytrope", color=palette1(7/10), linewidth=2, ls='--')
-            plt.title("Temperature: MESA (Windhorst) vs. N=3, $100 M_{\\odot}$")
+            plt.axhline(y=T_chi_fit(1*g_per_GeV), label="$T_{\chi}$ for $1$ GeV", c="#DD2BE2", linewidth=2, ls=':')
+            plt.axhline(y=T_chi_fit(0.1*g_per_GeV), label="$T_{\chi}$ for $10^{-1}$ GeV", c="#8A2BE2", linewidth=2, ls=':')
+            plt.axhline(y=T_chi_fit(0.01*g_per_GeV), label="$T_{\chi}$ for $10^{-2}$ GeV", c="#eb4242", linewidth=2, ls=':')
+            plt.title("Temperature: MESA (Windhorst) vs. N=3")
             plt.legend()
             plt.xlabel('$r$ [cm]')
             plt.ylabel('$T$ [K]')
@@ -841,7 +849,7 @@ def main():
             # PLOT n_p
             plt.plot(r, n_p_sample, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
             plt.plot(r_poly, n_p_poly_sample, label="N=3 Polytrope", color=palette1(7/10), linewidth=2, ls='--')
-            plt.title("Proton Number Density: MESA (Windhorst) vs. N=3, $100 M_{\\odot}$")
+            plt.title("Proton Number Density: MESA (Windhorst) vs. N=3")
             plt.legend()
             # plt.yscale("log")
             # plt.xscale("log")
@@ -854,7 +862,7 @@ def main():
             # Plot n_chi
             plt.plot(r, n_chi_sample, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
             plt.plot(r_poly, n_chi_poly_sample, label="N=3 Polytrope", color=palette1(7/10), linewidth=2, ls='--')
-            plt.title("DM Number Density: MESA (Windhorst) vs. N=3, $100 M_{\\odot}$")
+            plt.title("DM Number Density: MESA (Windhorst) vs. N=3")
             plt.legend()
             # plt.yscale("log")
             # plt.xscale("log")
@@ -867,7 +875,7 @@ def main():
             # PLOT v_esc
             plt.plot(r, v_esc_sample, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
             plt.plot(r_poly, v_esc_poly_sample, label="N=3 Polytrope", color=palette1(7/10), linewidth=2, ls='--')
-            plt.title("Escape Velocity: MESA (Windhorst) vs. N=3, $100 M_{\\odot}$")
+            plt.title("Escape Velocity: MESA (Windhorst) vs. N=3")
             plt.legend()
             plt.xlabel("$r$ [cm]")
             plt.ylabel("$v_{esc}$ [cm/s]")
@@ -878,7 +886,7 @@ def main():
             # PLOT gravitation pot
             plt.plot(r, phi_sample, ls = '-', linewidth = 2, color=palette1(4/10), label=mesa_lab)
             plt.plot(r_poly, phi_poly_sample, label="N=3 Polytrope", color=palette1(7/10), linewidth=2, ls='--')
-            plt.title("Gravitational Potential: MESA (Windhorst) vs. N=3, $100 M_{\\odot}$")
+            plt.title("Gravitational Potential: MESA (Windhorst) vs. N=3")
             plt.legend()
             plt.xlabel("$r$ [cm]")
             plt.ylabel("$\phi$ [ergs/g]")
@@ -966,37 +974,41 @@ def main():
 
             # check to see if 3.11 recovers 3.10
             # rrr = 0.6*10**11  # cm
-            # print("#######################")
-            # print("R values at T(r) = T_chi")
-            # print("R 3.10 =", R310(rrr, T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
-            # print("R 3.11 =", R311_2(rrr, T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
-            # print("#######################")
+            print("#######################")
+            print("DM Mass =", m, "GeV")
+            print("DM Temperature for that mass in this star =", T_chi_fit(m*g_per_GeV), "K")
+            print("#######################")
 
             R311_sample = []
+            R311 = []
             R310_sample = []
             norm = []
             norm_poly = []
             tsame = []
             rate = []
             for i in range(len(r)):
-                R310_sample.append(abs(R310(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma)))
-                R311_sample.append(abs(R311_2(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma)))
+                R310_sample.append(R310(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
+                R311_sample.append(R311_2(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
+                R311.append(R311_2(r[i], T_chi_fit(m*g_per_GeV), m*g_per_GeV, sigma))
                 norm.append(normfactor(r[i], m*g_per_GeV, T_chi_fit(m*g_per_GeV)))
-                norm_poly.append(normfactor_poly(r[i], m*g_per_GeV, T_chi_fit(m*g_per_GeV), M100))
+                norm_poly.append(normfactor_poly(r[i], m*g_per_GeV, T_chi_fit(m*g_per_GeV), star))
                 rate.append(R311_sample[i]/norm[i])
+                # if (T_chi_fit(m*g_per_GeV) - T(r[i]))/T(r[i]) < 0.0001:
+                #     tsame.append(r[i])
 
             # PLOT
-            plt.plot(r, rate, ls = '-', linewidth = 2, label="R 3.11 normalized " + mesa_lab)
+            # plt.plot(r, rate, ls = '-', linewidth = 2, label="R 3.11 normalized " + mesa_lab)
             plt.plot(r, R311_sample, ls = '-', linewidth = 2, label="R 3.11 " + mesa_lab)
             plt.plot(r, R310_sample, ls = '--', linewidth = 2, label="R 3.10 " + mesa_lab)
+            # plt.plot(r, R311, ls = '-', linewidth = 2, label="R 3.11 " + mesa_lab)
             # if tsame:
-            #     plt.axvline(x=tsame[0], label="$T_{\chi} = T(r)$", c="#8A2BE2", linewidth=2)
+            #     plt.axvline(x=tsame[-1], label="$T_{\chi} = T(r)$", c="#8A2BE2", linewidth=2)
             plt.title("MESA Gould Eq. 3.10 " + lab_mass  + "$M_{\\odot}$ (Windhorst)")
             plt.legend()
             plt.xlabel('$r$ [cm]')
             plt.ylabel('$R(w|v)$ [???]')
-            plt.ylim(0, 1.5*10**(-9))
-            # plt.yscale("log")
+            # plt.ylim(0, 1.5*10**(-9))
+            plt.yscale("log")
             # plt.xscale("log")
             file = "R311_" + str(args.direc) + "_" + str(args.profile) + ".png"
             plt.savefig(file, dpi=400)
@@ -1038,13 +1050,11 @@ def main():
             file = "E_" + str(args.direc) + "_" + str(args.profile) + ".csv"
             np.savetxt(file,output,delimiter=',')
 
-            print(evap_sample)
-
             # PLOT
             plt.plot(m_chi_csv_GeV, evap_sample, ls = '-', linewidth = 1, label=mesa_lab)
-            plt.title("MESA DM Evap. Rate $100 M_{\\odot}$ (Windhorst)")
+            plt.title("MESA DM Evap. Rate " + lab_mass  + "$M_{\\odot}$ (Windhorst), $\sigma=$" + str(sigma))
             plt.legend()
-            plt.xlim(10**-6, 10**3)
+            # plt.xlim(10**-6, 10**3)
             plt.ylim(10**-15, 10**-4)
             plt.xlabel('$m_{\\chi}$ [Gev]')
             plt.ylabel('$E$ [$s^{-1}$]')
@@ -1071,9 +1081,9 @@ def main():
 
         # PLOT
         plt.plot(m_chi_csv_GeV, evap_csv, ls = '-', linewidth = 1, label=mesa_lab)
-        plt.title("MESA DM Evap. Rate $100 M_{\\odot}$ (Windhorst)")
+        plt.title("MESA DM Evap. Rate " + lab_mass  + "$M_{\\odot}$ (Windhorst), $\sigma=$" + str(sigma))
         plt.legend()
-        plt.xlim(10**-6, 10**3)
+        # plt.xlim(10**-6, 10**3)
         plt.ylim(10**-15, 10**-4)
         plt.xlabel('$m_{\\chi}$ [Gev]')
         plt.ylabel('$E$ [$s^{-1}$]')
