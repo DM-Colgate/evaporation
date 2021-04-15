@@ -73,15 +73,24 @@ These can be printed with `./DM_evap_MESA.py -h`.
  - [X] Run evap code using polytrope stellar functions, is it still bad?
  - [X] Precision issues in scipy quad integrals?
  - [X] Discrepency in central density between MESA and N=3?
- - [ ] Shell rate 3.11 goes negative at certain points? Fix this.
- - [ ] Evap. turns back up above 10^3 GeV?
- - [ ] Why is potential from MESA wrong by a factor of 0.5???
+ - [ ] Why are rates from 3.11 negative? W -> V switched issue?
+ - [ ] Evap. turns back up above 10^3 GeV??
+ - [ ] Evap. countinues to get high below 10^-2 GeV??
+ - [ ] Why is acceleration from MESA wrong by a factor of 0.5???
  - [ ] Automate plotting multiple models and/or multiple stars.
 
 ### quad error
 ```
 IntegrationWarning: The maximum number of subdivisions (50) has been achieved. If increasing the limit yields no improvement it is advised to analyze the integrand in order to determine the difficulties. If the position of a local difficulty can be determined (singularity, discontinuity) one will probably gain from splitting up the interval and calling the integrator on the subranges. Perhaps a special-purpose integrator should be used.
 IntegrationWarning: The occurrence of roundoff error is detected, which prevents the requested tolerance from being achieved. The error may be underestimated.
+```
+
+# ZAMS
+The closest profiles to zero age main sequence are
+```
+4 -> 725
+5 -> 400
+6 -> 400
 ```
 
 # Plots
