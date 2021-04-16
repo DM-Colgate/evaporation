@@ -672,13 +672,13 @@ def v_chi_poly(mx, Tx, star):
 ########
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-D", "--direc", help="directory containing MESA profile and history files")
+    parser.add_argument("-D", "--direc", help="directory containing MESA profile and history files", type=str)
     parser.add_argument("-p", "--profile", help="index of the profile to use", type=int)
-    parser.add_argument("-T", "--TchiMchi", help="name of csv file to store T_chi data in after solving with Eq. 4.10 from Spergel and Press 1985", action='store_true')
-    parser.add_argument("-M", "--MESA", help="plot stellar parameters from MESA", type=float)
-    parser.add_argument("-E", "--Evap", help="plot DM evap rate by calculating from MESA data files", action='store_true')
-    parser.add_argument("-e", "--evapcsv", help="plot DM evap rate using previously calculated csv", action='store_true')
-    parser.add_argument("-R", "--R311", help="plot Gould 3.11 equation", type=float)
+    parser.add_argument("-T", "--TchiMchi", help="use MESA data files to solve for DM temperature with Eq. 4.10 from Spergel and Press 1985", action='store_true')
+    parser.add_argument("-M", "--MESA", help="mass of DM in GeV to use, plot stellar params from MESA", type=float)
+    parser.add_argument("-E", "--Evap", help="calculate and plot DM evaporation rate using MESA data files", action='store_true')
+    parser.add_argument("-e", "--evapcsv", help="plot DM evaporation rate using previously calculated csv file", action='store_true')
+    parser.add_argument("-R", "--R311", help="mass of DM in GeV to use, plot Goulde Eq. 3.11", type=float)
     parser.add_argument("-H", "--heatmap", help="plot heatmaps for alpha, beta, and gamma", action='store_true')
     args = parser.parse_args()
 
@@ -1066,7 +1066,7 @@ def main():
 
             # PLOT
             plt.plot(m_chi_csv_GeV, evap_sample, ls = '-', linewidth = 1, label=mesa_lab)
-            plt.plot(m_chi_csv_GeV, caleb, ls = '-', linewidth = 1, label="caleb")
+            # plt.plot(m_chi_csv_GeV, caleb, ls = '-', linewidth = 1, label="caleb")
             plt.title("MESA DM Evap. Rate " + lab_mass  + "$M_{\\odot}$ (Windhorst), $\sigma=$" + str(sigma))
             plt.legend()
             # plt.xlim(10**-6, 10**3)
