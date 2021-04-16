@@ -50,24 +50,18 @@ These can be printed with `./DM_evap_MESA.py -h`.
  - [X] Get MESA Evap. rates.
  - [X] Fix polytrope number density!!!
  - [X] How to get polytrope central temp???
- - [X] Compare Goulde 3.11 R(w|v) function against Caleb's.
  - [X] Two different cetral densities for polytrope?
  - [X] Boltzmann constant in alpha, beta, gamma and mpf(gibberish)?
- - [X] Why is MESA's Gould 3.11 R(w|v) 10^9 larger than caleb's?
  - [X] Why is v_esc so different for MESA and N=3?
  - [X] Check V_esc within the star is being calculated right.
  - [X] Check normalization factor.
  - [X] Check input functions to DM temp (i.e. boltzman constant).
  - [X] Check DM temp lines up with expected.
  - [X] Run evap code using polytrope stellar functions, is it still bad?
- - [X] Precision issues in scipy quad integrals?
  - [X] Discrepency in central density between MESA and N=3?
- - [ ] Check against Caleb's rates across the mass range!
- - [ ] E_e and E_c dependence on r???
- - [ ] Why are rates from 3.11 negative? W -> V switched issue?
- - [ ] Evap. turns back up above 10^3 GeV??
- - [ ] Evap. countinues to get high below 10^-2 GeV??
- - [ ] Why is acceleration from MESA wrong by a factor of 0.5???
+ - [X] Check against Caleb's rates across the mass range!
+ - [X] E_e and E_c dependence on r???
+ - [ ] Precision issues in scipy quad integrals?
  - [ ] Automate plotting multiple models and/or multiple stars.
 
 ### quad error
