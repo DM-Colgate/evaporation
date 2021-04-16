@@ -73,6 +73,8 @@ These can be printed with `./DM_evap_MESA.py -h`.
  - [X] Run evap code using polytrope stellar functions, is it still bad?
  - [X] Precision issues in scipy quad integrals?
  - [X] Discrepency in central density between MESA and N=3?
+ - [ ] Check against Caleb's rates across the mass range!
+ - [ ] E_e and E_c dependence on r???
  - [ ] Why are rates from 3.11 negative? W -> V switched issue?
  - [ ] Evap. turns back up above 10^3 GeV??
  - [ ] Evap. countinues to get high below 10^-2 GeV??
