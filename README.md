@@ -85,7 +85,7 @@ The closest profiles to zero age main sequence are
 ```
 
 # Plots
-![evaporation](./plots/E_5_400.png.png)
+![evaporation](./plots/E_5_400.png)
 ![Eq. 3.11](./plots/R311_4_725_-1.png)
 ![normalization factor](./plots/norm_5_400.png)
 ![density](./plots/rho_5_400.png)
