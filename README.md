@@ -5,12 +5,6 @@
  - [matplotlib](https://matplotlib.org/stable/index.html)
 
 ### Usage
-NOTE: Currently debuging and trying to get evaporation to work inside of `DM_evap_MESA.py`, to run do:
-```
-./DM_evap_MESA.py -D Ilie4_ii -p 700 -e
-```
-One I get reasonable evap I'll reorganize and get all the flags working again.
-
 Execute from the command line, in the directory that contains MESA log directories like so:
 ```
 ├── DM_evap_MESA.py
@@ -24,7 +18,7 @@ Execute from the command line, in the directory that contains MESA log directori
 
 Specify the directory using the `-D` flag, then the index of profile file you wish to use with the `-p` flag:
 
-```./DM_evap_MESA.py -D mesa_1 -p 700```.
+```./DM_evap_MESA.py -D mesa_1 -p 725 -E```.
 
 The CSV files `TM4_***.CSV` are data files containing DM temperature verus DM mass. These are calculated for the Ilie4 star. The way it is set up now, the program will automatically pick the correct profile based on the profile index pass it. As of now you still have to manually change the `TM4` to something else if you wish to calculate for another star.
 
@@ -32,24 +26,19 @@ These indices can be found inside the `profiles.index` file.
 
 The current command line arguments are:
 ```
-usage: DM_evap_MESA.py [-h] [-D DIREC] [-p PROFILE] [-T] [-M] [-P] [-E]
-                       [-e] [-R] [-H]
+usage: DM_evap_MESA.py [-h] [-D DIREC] [-p PROFILE] [-T] [-M MESA] [-E] [-e] [-R R311] [-H]
 
 optional arguments:
   -h, --help            show this help message and exit
   -D DIREC, --direc DIREC
-                        directory containing MESA profile and history
-                        files
+                        directory containing MESA profile and history files
   -p PROFILE, --profile PROFILE
                         index of the profile to use
-  -T, --TchiMchi        name of csv file to store T_chi data in after
-                        solving with Eq. 4.10 from Spergel and Press 1985
-  -M, --MESA            plot stellar parameters from MESA
-  -P, --poly            plot stellar parameters for N=3 polytope
-  -E, --Evap            plot DM evap rate by calculating from MESA data
-                        files
-  -e, --evapcsv         plot DM evap rate using previously calculated csv
-  -R, --G311            plot Gould 3.11 equation
+  -T, --TchiMchi        use MESA data files to solve for DM temperature with Eq. 4.10 from Spergel and Press 1985
+  -M MESA, --MESA MESA  mass of DM in GeV to use, plot stellar params from MESA
+  -E, --Evap            calculate and plot DM evaporation rate using MESA data files
+  -e, --evapcsv         plot DM evaporation rate using previously calculated csv file
+  -R R311, --R311 R311  mass of DM in GeV to use, plot Goulde Eq. 3.11
   -H, --heatmap         plot heatmaps for alpha, beta, and gamma
 ```
 These can be printed with `./DM_evap_MESA.py -h`.
@@ -96,10 +85,11 @@ The closest profiles to zero age main sequence are
 ```
 
 # Plots
-![density](./plots/Ilie4_700_density.png)
-![number density](./plots/Ilie4_700_np.png)
-![potential](./plots/Ilie4_700_phi.png)
-![temperature](./plots/Ilie4_700_temp.png)
-![escape velocity](./plots/Ilie4_700_vesc.png)
-![Eq. 3.11](./plots/Ilie4_700_R.png)
-![evaporation](./plots/Ilie4_700_evap.png)
+![evaporation](./plots/E_5_400.png.png)
+![Eq. 3.11](./plots/R311_4_725_-1.png)
+![normalization factor](./plots/norm_5_400.png)
+![density](./plots/rho_5_400.png)
+![number density](./plots/np_5_400.png)
+![potential](./plots/np_5_400.png)
+![temperature](./plots/T_5_400.png)
+![escape velocity](./plots/vesc_5_400.png)
