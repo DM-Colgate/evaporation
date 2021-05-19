@@ -5,4 +5,4 @@
 *.pdf
 !plots/*
 .ipynb_checkpoints
-*.txt
+# *.txt
