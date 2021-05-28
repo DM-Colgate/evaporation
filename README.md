@@ -26,7 +26,7 @@ These indices can be found inside the `profiles.index` file.
 
 The current command line arguments are:
 ```
-usage: DM_evap_MESA.py [-h] [-D DIREC] [-p PROFILE] [-T] [-M MESA] [-E] [-e] [-R R311] [-H]
+usage: DM_evap_MESA.py [-h] [-D DIREC] [-p PROFILE] [-T] [-M MESA] [-E] [-P] [-e] [-R R311] [-H]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -37,6 +37,8 @@ optional arguments:
   -T, --TchiMchi        use MESA data files to solve for DM temperature with Eq. 4.10 from Spergel and Press 1985
   -M MESA, --MESA MESA  mass of DM in GeV to use, plot stellar params from MESA
   -E, --Evap            calculate and plot DM evaporation rate using MESA data files
+  -P POLY, --poly POLY  calc the evap polytrope, give the CSV file holding the tau vs. mu data for an N=3 polytrope
+  -S STAR, --star STAR  100, 300, or 1000
   -e, --evapcsv         plot DM evaporation rate using previously calculated csv file
   -R R311, --R311 R311  mass of DM in GeV to use, plot Goulde Eq. 3.11
   -H, --heatmap         plot heatmaps for alpha, beta, and gamma
@@ -44,23 +46,23 @@ optional arguments:
 These can be printed with `./DM_evap_MESA.py -h`.
 
 # Issues/To Do
- - [X] Issues with the calculated potential from MESA's gravitational acceleration?
- - [X] Add comparison plots with N=3 poltropes.
- - [X] Code Goulde 3.11 R(w|v) function.
- - [X] Get MESA Evap. rates.
- - [X] Fix polytrope number density!!!
- - [X] How to get polytrope central temp???
- - [X] Two different cetral densities for polytrope?
- - [X] Boltzmann constant in alpha, beta, gamma and mpf(gibberish)?
- - [X] Why is v_esc so different for MESA and N=3?
- - [X] Check V_esc within the star is being calculated right.
- - [X] Check normalization factor.
- - [X] Check input functions to DM temp (i.e. boltzman constant).
- - [X] Check DM temp lines up with expected.
- - [X] Run evap code using polytrope stellar functions, is it still bad?
- - [X] Discrepency in central density between MESA and N=3?
- - [X] Check against Caleb's rates across the mass range!
- - [X] E_e and E_c dependence on r???
+ <!-- - [X] Issues with the calculated potential from MESA's gravitational acceleration? -->
+ <!-- - [X] Add comparison plots with N=3 poltropes. -->
+ <!-- - [X] Code Goulde 3.11 R(w|v) function. -->
+ <!-- - [X] Get MESA Evap. rates. -->
+ <!-- - [X] Fix polytrope number density!!! -->
+ <!-- - [X] How to get polytrope central temp??? -->
+ <!-- - [X] Two different cetral densities for polytrope? -->
+ <!-- - [X] Boltzmann constant in alpha, beta, gamma and mpf(gibberish)? -->
+ <!-- - [X] Why is v_esc so different for MESA and N=3? -->
+ <!-- - [X] Check V_esc within the star is being calculated right. -->
+ <!-- - [X] Check normalization factor. -->
+ <!-- - [X] Check input functions to DM temp (i.e. boltzman constant). -->
+ <!-- - [X] Check DM temp lines up with expected. -->
+ <!-- - [X] Run evap code using polytrope stellar functions, is it still bad? -->
+ <!-- - [X] Discrepency in central density between MESA and N=3? -->
+ <!-- - [X] Check against Caleb's rates across the mass range! -->
+ <!-- - [X] E_e and E_c dependence on r??? -->
  - [ ] Precision issues in scipy quad integrals?
  - [ ] Automate plotting multiple models and/or multiple stars.
 
