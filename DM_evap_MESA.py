@@ -187,7 +187,7 @@ def R311_2(r, T_chi, m_chi, sigma):
     return -1*a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20)
 
 def R311_3(r, Tx, mx, sigma, star):
-    '''caleb's version of goulde 3.11'''
+    '''caleb's version of goulde 3.11, using for polytrope calc'''
     xi = 6.89*(r / star.get_radius_cm())
     # central proton number density (cm^-3)
     # nc = polytrope3_rhoc(star)*0.75/1.6726e-24
@@ -197,16 +197,16 @@ def R311_3(r, Tx, mx, sigma, star):
     T = T_poly(r, star)
     mu_p = mu_plus(mu(mx))
     mu_m = mu_minus(mu(mx))
-    nuu = nu(r, mx, Tx)
-    xi_g = xi_2(r, mx, Tx)
-    Ee = E_e(mx, v_esc(r))
-    Ec = E_c(mx, v_c(r))
-    g_p = gamma_2('+', r, mx, Tx, v_esc(r), v_c(r))
-    g_m = gamma_2('-', r, mx, Tx, v_esc(r), v_c(r))
-    a_p = alpha('+', r, mx, v_esc(r), v_c(r))
-    a_m = alpha('-', r, mx, v_esc(r), v_c(r))
-    b_p = beta('+', r, mx, v_esc(r), v_c(r))
-    b_m = beta('-', r, mx, v_esc(r), v_c(r))
+    nuu = nu_poly(r, mx, Tx, star)
+    xi_g = xi_2_poly(r, mx, Tx, star)
+    Ee = E_e(mx, v_esc_poly(r, star))
+    Ec = E_c(mx, v_c_poly(r, star))
+    g_p = gamma_2_poly('+', r, mx, Tx, v_esc_poly(r, star), v_c_poly(r, star), star)
+    g_m = gamma_2_poly('-', r, mx, Tx, v_esc_poly(r, star), v_c_poly(r, star), star)
+    a_p = alpha_poly('+', r, mx, v_esc_poly(r, star), v_c_poly(r, star), star)
+    a_m = alpha_poly('-', r, mx, v_esc_poly(r, star), v_c_poly(r, star), star)
+    b_p = beta_poly('+', r, mx, v_esc_poly(r, star), v_c_poly(r, star), star)
+    b_m = beta_poly('-', r, mx, v_esc_poly(r, star), v_c_poly(r, star), star)
     R_pre = 2/np.pi * proton_speed(xi, star) * star.get_vesc_surf() * 1/np.sqrt(mu(mx)) * (T/Tx)**(3/2) * sigma * nc * eta_poly(r, star)
     term1 = np.exp(-(mu_p/xi_g)**2 * (Ee/(kb*Tx))) * (mu(mx)*mu_m/(nuu*xi_g)*(xi_g**2/nuu - mu_p*mu_m/mu(mx)) + mu_p**3/(xi_g*(nuu-mu(mx))))*chi(g_m, g_p)
     term2 = np.exp(-Ec/(kb*Tx)) * mu(mx)/nuu * ( a_p*a_m - 1/(2*mu(mx)) + mu_m**2*(1/mu(mx) - 1/nuu) ) * chi(a_m, a_p)
@@ -311,6 +311,14 @@ def alpha(pm, r, m_chi, w, v):
         val = (m_p/(2 * k_cgs * T(r)))**(1/2) * (mu_plus(mu(m_chi)) * v - mu_minus(mu(m_chi)) * w)
     return val
 
+def alpha_poly(pm, r, m_chi, w, v, star):
+    '''made up goulde function'''
+    if (pm == '+'):
+        val = (m_p/(2 * k_cgs * T_poly(r, star)))**(1/2) * (mu_plus(mu(m_chi)) * v + mu_minus(mu(m_chi)) * w)
+    if (pm == '-'):
+        val = (m_p/(2 * k_cgs * T_poly(r, star)))**(1/2) * (mu_plus(mu(m_chi)) * v - mu_minus(mu(m_chi)) * w)
+    return val
+
 def gamma_2(pm, r, m_chi, T_chi, w, v):
     '''made up goulde function'''
     if (pm == '+'):
@@ -319,20 +327,42 @@ def gamma_2(pm, r, m_chi, T_chi, w, v):
         val = np.sqrt(m_p / (2 * k_cgs * T(r))) * (grho(r, m_chi, T_chi)*v - xi_2(r, m_chi, T_chi)*w)
     return val
 
+def gamma_2_poly(pm, r, m_chi, T_chi, w, v, star):
+    '''made up goulde function'''
+    if (pm == '+'):
+        val = np.sqrt(m_p / (2 * k_cgs * T_poly(r, star))) * (grho_poly(r, m_chi, T_chi, star)*v + xi_2_poly(r, m_chi, T_chi, star)*w)
+    if (pm == '-'):
+        val = np.sqrt(m_p / (2 * k_cgs * T_poly(r, star))) * (grho_poly(r, m_chi, T_chi, star)*v - xi_2_poly(r, m_chi, T_chi, star)*w)
+    return val
+
 def grho(r, m_chi, T_chi):
     '''made up goulde function'''
     val =  (mu_plus(mu(m_chi)) * (mu_minus(mu(m_chi))))/ xi_2(r, m_chi, T_chi)
     return val
 
+def grho_poly(r, m_chi, T_chi, star):
+    '''made up goulde function'''
+    val =  (mu_plus(mu(m_chi)) * (mu_minus(mu(m_chi))))/ xi_2_poly(r, m_chi, T_chi, star)
+    return val
+
 def xi_2(r, m_chi, T_chi):
     '''not the polytope xi!!!!!!, just a made up goulde function'''
-    ###TODO: invalid root???
     val =  np.sqrt(mu_minus(mu(m_chi))**2 + nu(r, m_chi, T_chi))
+    return val
+
+def xi_2_poly(r, m_chi, T_chi, star):
+    '''not the polytope xi!!!!!!, just a made up goulde function'''
+    val =  np.sqrt(mu_minus(mu(m_chi))**2 + nu_poly(r, m_chi, T_chi, star))
     return val
 
 def nu(r, m_chi, T_chi):
     '''made up goulde function'''
     val =  mu(m_chi) * T(r) / T_chi
+    return val
+
+def nu_poly(r, m_chi, T_chi, star):
+    '''made up goulde function'''
+    val =  mu(m_chi) * T_poly(r, star) / T_chi
     return val
 
 def E_e(m_chi, v):
@@ -349,11 +379,18 @@ def E_c(m_chi, w):
 
 def beta(pm, r, m_chi, w, v):
     '''made up goulde function'''
-    ###TODD: boltzmand constant???
     if (pm == '+'):
         val = (m_p/(2 * k_cgs * T(r)))**(1/2) * (mu_minus(mu(m_chi)) * v + mu_plus(mu(m_chi)) * w)
     if (pm == '-'):
         val = (m_p/(2 * k_cgs * T(r)))**(1/2) * (mu_minus(mu(m_chi)) * v - mu_plus(mu(m_chi)) * w)
+    return val
+
+def beta_poly(pm, r, m_chi, w, v, star):
+    '''made up goulde function'''
+    if (pm == '+'):
+        val = (m_p/(2 * k_cgs * T_poly(r, star)))**(1/2) * (mu_minus(mu(m_chi)) * v + mu_plus(mu(m_chi)) * w)
+    if (pm == '-'):
+        val = (m_p/(2 * k_cgs * T_poly(r, star)))**(1/2) * (mu_minus(mu(m_chi)) * v - mu_plus(mu(m_chi)) * w)
     return val
 
 def gamma(pm, r, m_chi, T_chi):
@@ -389,6 +426,10 @@ def mu_minus(mu):
 def v_c(r):
     '''cutoff velocity for the boltzman distribution'''
     return v_esc(r)
+
+def v_c_poly(r, star):
+    '''cutoff velocity for the boltzman distribution'''
+    return v_esc_poly(r, star)
 
 def v_esc(r):
     '''escape velocity at an arbitray point in the star'''
@@ -491,7 +532,11 @@ def evap_rate_lower_integrand_poly(r, T_chi, m_chi, star):
 
 def evap_rate_poly(T_chi, m_chi, sigma, star):
     '''evaporation rate of DM for the whole star'''
-    return quad(evap_rate_integrand_poly, 0, star.get_radius_cm(), args=(T_chi, m_chi, sigma, star))[0]/quad(evap_rate_lower_integrand_poly, 0, star.get_radius_cm(), args=(T_chi, m_chi, star), limit=1000)[0]
+    top = quad(evap_rate_integrand_poly, 0, star.get_radius_cm(), args=(T_chi, m_chi, sigma, star))[0]
+    bottom = quad(evap_rate_lower_integrand_poly, 0, star.get_radius_cm(), args=(T_chi, m_chi, star), limit=1000)[0]
+    # print("top = ", top)
+    # print("bottom = ", bottom)
+    return top/bottom
 
 def read_in_T_chi(name):
     '''reads T_chi vs M_chi data from CSV files'''
@@ -507,6 +552,21 @@ def read_in_T_chi(name):
     # now fit interpolation functions to T_chi w.r.t m_chi
     T_chi_fit = interp(m_chi_csv, T_chi_csv)
     return (m_chi_csv, T_chi_csv, T_chi_fit)
+
+def read_in_tau(name):
+    '''reads T_chi vs M_chi data from CSV files'''
+    # read DM temp from csv
+    tau_csv = []
+    mu_csv = []
+    with open(name) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            tau_csv.append(float(row[1]))
+            mu_csv.append(float(row[0]))
+
+    # now fit interpolation functions to T_chi w.r.t m_chi
+    tau_fit = interp(mu_csv, tau_csv)
+    return (mu_csv, tau_csv, tau_fit)
 
 def read_in_evap(name):
     '''reads T_chi vs M_chi data from CSV files'''
@@ -677,6 +737,8 @@ def main():
     parser.add_argument("-T", "--TchiMchi", help="use MESA data files to solve for DM temperature with Eq. 4.10 from Spergel and Press 1985", action='store_true')
     parser.add_argument("-M", "--MESA", help="mass of DM in GeV to use, plot stellar params from MESA", type=float)
     parser.add_argument("-E", "--Evap", help="calculate and plot DM evaporation rate using MESA data files", action='store_true')
+    parser.add_argument("-P", "--poly", help="calc the evap polytrope, give the CSV file holding the tau vs. mu data for an N=3 polytrope", type=str)
+    parser.add_argument("-S", "--star", help="100, 300, or 1000", type=str)
     parser.add_argument("-e", "--evapcsv", help="plot DM evaporation rate using previously calculated csv file", action='store_true')
     parser.add_argument("-R", "--R311", help="mass of DM in GeV to use, plot Goulde Eq. 3.11", type=float)
     parser.add_argument("-H", "--heatmap", help="plot heatmaps for alpha, beta, and gamma", action='store_true')
@@ -1100,6 +1162,75 @@ def main():
         plt.legend()
         # plt.xlim(10**-6, 10**3)
         plt.ylim(10**-15, 10**-4)
+        plt.xlabel('$m_{\\chi}$ [Gev]')
+        plt.ylabel('$E$ [$s^{-1}$]')
+        plt.yscale("log")
+        plt.xscale("log")
+        file = "E_" + str(args.direc) + "_" + str(args.profile) + ".png"
+        plt.savefig(file, dpi=400)
+        # plt.show()
+        plt.clf()
+
+    if args.poly:
+        '''NOW CALC POLY EVAP RATES'''
+        # note: sigma is set at the begining of the main loop
+        # intalize arrays
+        caleb = []
+        m_chi_csv = []
+        T_chi_csv = []
+
+        # set the correct star from the command line arguments
+        if args.star == "100":
+            star = M100
+        elif args.star == "300":
+            star = M300
+        elif args.star == "1000":
+            star = M1000
+        else:
+            print("please specific a star of 100, 300, or 1000 solar masses using the \"-p\" flag. tnk u")
+            exit()
+
+        # read in previously calculated mu vs. tau data from files
+        file = args.poly
+        if path.exists(file) == True:
+            (mu_csv, tau_csv, tau_fit) = read_in_tau(file)
+
+        # now we need to loop thru mu and tau to convert mu -> m_chi and tau -> T_chi
+        # mu is just defined as m_chi / m_proton
+        # tau is just defined as T_chi / T(0) where T(r) is the temp of baryonic 
+        # matter in the star, i.e. T(0) = the center temp. of the star
+        for i in range(len(mu_csv)):
+            m_chi_csv.append(mu_csv[i] * m_p)
+        for i in range(len(tau_csv)):
+            T_chi_csv.append(tau_csv[i] * T_poly(0.0, star))
+
+        # run thru a do loop for all the masses to actually calc the evap
+        for i in range(len(m_chi_csv)):
+            print("####################################################")
+            print("Getting evap. rate for m_chi =", m_chi_csv[i]/g_per_GeV, "GeV...")
+            # THIS IS WHERE EVAP IS CALLED!!!
+            caleb.append(evap_rate_poly(T_chi_csv[i], m_chi_csv[i], sigma, star))
+            print("Caleb's evap. rate is =", caleb[i])
+
+        # lets convert our m_chi (in g) to m_chi (in GeV) for ploting
+        m_chi_csv_GeV = []
+        for i in range(len(m_chi_csv)):
+            m_chi_csv_GeV.append(m_chi_csv[i]/g_per_GeV)
+
+        # write to CSV
+        m_chi_csv_GeV = np.asarray(m_chi_csv_GeV)
+        evap_sample = np.asarray(evap_sample)
+        output = np.column_stack((m_chi_csv_GeV.flatten(), evap_sample.flatten()))
+        file = "E_" + str(args.direc) + "_" + str(args.profile) + ".csv"
+        np.savetxt(file,output,delimiter=',')
+        print("Evap. data saved in ", file)
+
+        # PLOT
+        plt.plot(m_chi_csv_GeV, caleb, ls = '-', linewidth = 1, label="caleb")
+        plt.title("MESA DM Evap. Rate " + lab_mass  + "$M_{\\odot}$ (Windhorst), $\sigma=$" + str(sigma))
+        plt.legend()
+        # plt.xlim(10**-6, 10**3)
+        plt.ylim(10**-15, 10**-10)
         plt.xlabel('$m_{\\chi}$ [Gev]')
         plt.ylabel('$E$ [$s^{-1}$]')
         plt.yscale("log")
