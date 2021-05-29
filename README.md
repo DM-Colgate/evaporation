@@ -1,3 +1,7 @@
+# Background
+- [Weakly Interacting Massive Particle Distribution in and Evaporation from the Sun](https://ui.adsabs.harvard.edu/abs/1985ApJ...294..663S/abstract)
+- [Effect of hypothetical, weakly interacting, massive particles on energy transport in the solar interior](https://ui.adsabs.harvard.edu/abs/1987ApJ...321..560G/abstract)
+
 # Documentation
 ### Dependencies
  - [py_mesa_reader](https://github.com/wmwolf/py_mesa_reader)
