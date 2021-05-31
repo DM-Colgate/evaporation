@@ -5,8 +5,15 @@
 # Documentation
 ### Dependencies
  - [py_mesa_reader](https://github.com/wmwolf/py_mesa_reader)
+    - To install, simply clone the repo (`https://github.com/wmwolf/py_mesa_reader`), move into the clone (`cd py_mesa_reader`), and run: `pip install .`.
  - [scipy](https://www.scipy.org/)
+    - To install run: `pip install scipy`.
  - [matplotlib](https://matplotlib.org/stable/index.html)
+    - To install run: `pip install matplotlib`.
+
+### `ref.ipynb`
+[This notebook](./ref.ipynb) contains Caleb's evaporation code extracted from [the PRD/PRL 2021 repository](https://github.com/DM-Colgate/PopIII_DM_Detectors).
+This just makes it easy to reference and run without bumping into errors or missing data files.
 
 ### Usage
 Execute from the command line, in the directory that contains MESA log directories like so:
@@ -84,12 +91,11 @@ The closest profiles to zero age main sequence are
 6 -> 400
 ```
 
-# Plots
-![evaporation](./plots/E_5_400.png)
-![Eq. 3.11](./plots/R311_4_725_-1.png)
-![normalization factor](./plots/norm_5_400.png)
-![density](./plots/rho_5_400.png)
-![number density](./plots/np_5_400.png)
-![potential](./plots/np_5_400.png)
-![temperature](./plots/T_5_400.png)
-![escape velocity](./plots/vesc_5_400.png)
+<!-- # Plots -->
+<!-- ![evaporation](./plots/E_5_400.png) -->
+<!-- ![Eq. 3.11](./plots/R311_4_725_-1.png) -->
+<!-- ![normalization factor](./plots/norm_5_400.png) -->
+<!-- ![density](./plots/rho_5_400.png) -->
+<!-- ![number density](./plots/np_5_400.png) -->
+<!-- ![temperature](./plots/T_5_400.png) -->
+<!-- ![escape velocity](./plots/vesc_5_400.png) -->
