@@ -80,9 +80,12 @@ def interp(x, y):
     fit = interpolate.interp1d(x, y, fill_value="extrapolate")
     return fit
 
+### TODO: clean up an rename the R(w|v) functions
+### TODO: remove the unused/legacy functions
+### TODO: write more/better comments before this stuff entirely evacuates itself from my brain
+
 def R311(r, T_chi, m_chi, sigma):
     '''Eq. 3.11 from Goulde 1987, normalized evap. rate'''
-    #TODO numerical integration over phase space
     a1 = (2/np.pi)*(2*k_cgs*T(r)/m_chi)**(1/2)
     a2 = (T(r)/T_chi)**(3/2)* sigma * n_p(r) * n_chi(r, T_chi, m_chi)
     b3 = np.exp(-1*(mu_plus(mu(m_chi))/xi(r, m_chi, T_chi))**2 *(m_chi*v_esc(r)**2/(2*T_chi)))
@@ -106,7 +109,7 @@ def R311(r, T_chi, m_chi, sigma):
     return a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20)
 
 def R310(r, T_chi, m_chi, sigma):
-    '''Eq. 3.10 from Goulde 1987, normalized evap. rate'''
+    '''!!!UNUSED/BAD!!! Eq. 3.10 from Goulde 1987, normalized evap. rate'''
     # compute each individual term
     a1 = (2/np.pi) * np.sqrt((2*k_cgs*T(r))/(m_chi))
     a2 = sigma * n_p(r) * n_chi(r, T_chi, m_chi)
@@ -119,19 +122,9 @@ def R310(r, T_chi, m_chi, sigma):
     c9 = 1/(2*mu(m_chi))
     b10 = chi(alpha('-', r, m_chi, v_c(r), v_esc(r)), alpha('+', r, m_chi, v_c(r), v_esc(r)))
     b11 = np.exp( D( (-1*E_c(m_chi, v_esc(r))/ T_chi) +  alpha('-', r, m_chi, v_c(r), v_esc(r))**2 ))
-    ### TODO: overflow in B11???
-    # print("b11 =",b11)
-    # print("alpha- =", alpha('-', r, m_chi, v_c(r), v_esc(r)) )
-    # print("term inside exp =" ,(-1*E_c(m_chi, v_esc(r))/ T_chi) +  alpha('-', r, m_chi, v_c(r), v_esc(r))**2)
-    # print("left term:", -1*E_c(m_chi, v_esc(r))/ T_chi)
-    # print("alpha^2", alpha('-', r, m_chi, v_c(r), v_esc(r))**2)
     b12 = np.sqrt((m_chi)/(2*k_cgs*T(r)))
     b13 = (v_esc(r) - v_c(r))/ 2
-    # TODO overflow error in b14
-    # print(D( (-1*E_c(m_chi, v_esc(r))/ T_chi) +  alpha('+', r, m_chi, v_c(r), v_esc(r))**2 ))
-    # print("alpha+ =", alpha('+', r, m_chi, v_c(r), v_esc(r)) )
     b14 = np.exp( D( (-1*E_c(m_chi, v_esc(r))/ T_chi) +  alpha('+', r, m_chi, v_c(r), v_esc(r))**2 ))
-    # print("b14 = ", b14)
     b15 = np.sqrt((m_chi)/(2*k_cgs*T(r)))
     b16 = (v_esc(r) + v_c(r))/ 2
 
@@ -141,8 +134,7 @@ def R310(r, T_chi, m_chi, sigma):
     return -1*a1*a2*(b3*(c4 - c5)*b6 + b7*(c8-c9)*b10 + b11thru16)
 
 def R311_2(r, T_chi, m_chi, sigma):
-    '''Eq. 3.11 from Goulde 1987, normalized evap. rate'''
-    #TODO numerical integration over phase space
+    '''!!!UNUSED/BAD!!! Eq. 3.11 from Goulde 1987, normalized evap. rate'''
     a1 = (2/np.pi) * np.sqrt((2*k_cgs*T(r))/(m_chi))
     a2 = (T(r)/T_chi)**(1.5) * sigma * n_p(r) * n_chi(r, T_chi, m_chi)
     b3 = np.exp(-1* (mu_plus(mu(m_chi)) / xi_2(r, m_chi, T_chi))**2 * (E_e(m_chi, v_esc(r))/T_chi))
@@ -163,27 +155,6 @@ def R311_2(r, T_chi, m_chi, sigma):
     b18 = mu(m_chi)/(2* nu(r, m_chi, T_chi)) * alpha('+',  r, m_chi, v_c(r), v_esc(r))
     b19 = np.exp(-1 * (E_c(m_chi, v_c(r))/T_chi + alpha('+',  r, m_chi, v_c(r), v_esc(r))**2))
     b20 = mu(m_chi)/(2* nu(r, m_chi, T_chi)) * alpha('-',  r, m_chi, v_c(r), v_esc(r))
-    # print("a1 = ", a1)
-    # print("a2 = ", a2)
-    # print("b3 = ", b3)
-    # print("c4 = ", c4)
-    # print("d5 = ", d5)
-    # print("d6 = ", d6)
-    # print("c7 = ", c7)
-    # print("b8 = ", b8)
-    # print("b9 = ", b9)
-    # print("c10 = ", c10)
-    # print("c11 = ", c11)
-    # print("c12 = ", c12)
-    # print("b13 = ", b13)
-    # print("b14 = ", b14)
-    # print("b15 = ", b15)
-    # print("b16 = ", b16)
-    # print("b17 = ", b17)
-    # print("b18 = ", b18)
-    # print("b19 = ", b19)
-    # print("b20 = ", b20)
-    # print( a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20))
     return -1*a1*a2*(b3*(c4*(d5 - d6) + c7)*b8 + b9*(c10 - c11 + c12)*b13 - b14*b15*b16 - b17*b18 + b19*b20)
 
 def R311_3(r, Tx, mx, sigma, star):
@@ -217,7 +188,7 @@ def R311_3(r, Tx, mx, sigma, star):
     return R_val
 
 def R311_4(r, Tx, mx, sigma):
-    '''goulde 3.11'''
+    '''Goulde 1987 Eq. 3.11'''
     # nc = polytrope3_rhoc(star)*0.75/1.6726e-24
     nc = n_p(0)
     # Boltzmann constant in cgs Units (erg/K)
@@ -261,7 +232,6 @@ def R_gould_approx(m_chi, r, sigma, Rstar):
 
 def Omegaplus37(r, w, T_chi, m_chi, sigma):
     '''Eq. 3.7 from Goulde 1987'''
-    #TODO: boltzman constant
     a1 = (2*T(r))/(2*m_p*np.pi**(1/2))
     a2 = 1/(mu(m_chi)**2)
     a3 = sigma*n_p(r)/w
@@ -367,13 +337,11 @@ def nu_poly(r, m_chi, T_chi, star):
 
 def E_e(m_chi, v):
     '''escape energy'''
-    ### TODO: E_e and E_c dependence on r???
     val =  m_chi * v**2 /2
     return val
 
 def E_c(m_chi, w):
     '''cutoff energy'''
-    ### TODO: E_e and E_c dependence on r???
     val =  m_chi * w**2 /2
     return val
 
@@ -404,7 +372,6 @@ def gamma(pm, r, m_chi, T_chi):
 
 def xi(r, m_chi, T_chi):
     '''not the polytope xi!!!!!!, just a made up goulde function'''
-    ###TODO: wrong
     return np.sqrt(mu_minus(mu(m_chi))**2 + T(r)/(T_chi*mu(m_chi)))
 
 def chi(a, b):
@@ -438,23 +405,18 @@ def v_esc(r):
 
 def T(r):
     '''temperature interpolation function that is fit to a MESA data array'''
-    # TODO: swap with polytrope
     return T_fit(r)
 
 def n_p(r):
     '''number density interpolation function that uses fits from a MESA data array'''
-    # TODO: swap with polytrope
     return x_mass_fraction_H_fit(r) * rho_fit(r) / m_p
 
 def phi_integrand(r):
     '''integrand for the phi() function'''
-    #TODO: integrate over mass to calculate acceleration without using the acc parameter from MESA
-    #TODO: integrate 0->r
-    return 0.5* grav_fit(r)
+    return grav_fit(r)
 
 def phi(r):
     ''' calculate potential from acceleration given by mesa'''
-    # TODO: swap with polytrope
     return quad(phi_integrand, 0, r, limit=1000)[0]
 
 def phi2_integrand(r):
@@ -471,7 +433,6 @@ def phi_quick(r):
 
 def rho(r):
     '''calculates the density at r from MESA using an interpolated fit from a data array'''
-    # TODO: swap with polytrope
     return rho_fit(r)
 
 def mass_enc(r):
@@ -493,7 +454,6 @@ def SP85_EQ410(T_chi, m_chi, R_star):
 
 def normfactor(r, m_chi, T_chi):
     '''normalization factor'''
-    ###TODO:check
     t1 = sc.erf(v_c(r)/v_chi(r, m_chi, T_chi))
     t2 = (2/np.sqrt(np.pi))*(v_c(r)/v_chi(r, m_chi, T_chi))
     t3 = np.exp(-1*v_c(r)**2 /(v_chi(r, m_chi, T_chi)**2))
@@ -656,7 +616,6 @@ def mesa_interp(prof):
 
 def rho_c_poly(star):
     '''Density at center of polytrope'''
-    ###TODO: not sure which central density to use
     rhoc_poly = star.core_density
     return rhoc_poly
 
