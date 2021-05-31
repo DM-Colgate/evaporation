@@ -1,6 +1,8 @@
 # Background
 - [Weakly Interacting Massive Particle Distribution in and Evaporation from the Sun](https://ui.adsabs.harvard.edu/abs/1985ApJ...294..663S/abstract)
+    - By solving for the root of Eq. 4.10 in this paper, we are able to calculate dark matter temperature (`T_\chi`) for a set of stellar properties (either from `MESA` or an N=3 polytrope) and a given dark matter mass `m_\chi`.
 - [Effect of hypothetical, weakly interacting, massive particles on energy transport in the solar interior](https://ui.adsabs.harvard.edu/abs/1987ApJ...321..560G/abstract)
+    - The work in this paper allows us to take that `T_\chi` and the stellar properties and calculate dark matter evaporation rates for a given dark matter mass.
 
 # Documentation
 ### Dependencies
